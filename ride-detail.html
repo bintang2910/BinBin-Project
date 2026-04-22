@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ride Detail — BinBin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="index.css" />
+  <style>
+    /* Chat UI Styles */
+    .chat-container { border: 1px solid var(--gray-200); border-radius: 12px; background: #fafafa; overflow: hidden; display: flex; flex-direction: column; height: 350px; }
+    .chat-messages { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+    .chat-bubble { max-width: 80%; padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.4; position: relative; }
+    .chat-bubble.me { background: var(--purple-600); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+    .chat-bubble.other { background: white; color: var(--gray-800); border: 1px solid var(--gray-200); align-self: flex-start; border-bottom-left-radius: 4px; }
+    .chat-bubble-name { font-size: 11px; color: var(--gray-500); margin-bottom: 2px; }
+    .chat-bubble.me .chat-bubble-name { display: none; }
+    .chat-input-area { display: flex; padding: 10px; background: white; border-top: 1px solid var(--gray-200); align-items: center; }
+  </style>
+</head>
+<body>
+  <div class="app-shell page-transition-up">
+
+    <!-- Top Nav -->
+    <nav class="top-nav">
+      <div class="nav-logo">
+        <a href="index.html" class="icon-btn back-btn" aria-label="Back">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </a>
+        <span class="logo-text" style="font-size:18px;">Ride Detail</span>
+      </div>
+      <div class="nav-actions">
+        <button class="icon-btn" aria-label="Share">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </button>
+      </div>
+    </nav>
+
+    <main class="main-content" style="padding-bottom:110px;">
+
+      <!-- Ride Hero Banner -->
+      <section class="detail-hero detail-hero--ride">
+        <div class="hero-bg-orb hero-bg-orb--1" style="background:var(--purple-300);"></div>
+        <div class="detail-hero__content">
+          <div class="lobby-card__badge lobby-card__badge--ride" style="margin-bottom:8px;">🚗 Ride Sharing</div>
+          <h1 class="detail-hero__title">Grab to Sudirman</h1>
+          <div class="detail-hero__chip">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Departs in <strong id="ride-countdown">15:00</strong>
+          </div>
+        </div>
+      </section>
+
+      <!-- Route Timeline (Static — No Maps) -->
+      <section class="section">
+        <h2 class="section-title" style="font-size:15px; margin-bottom:14px;">📍 Route</h2>
+        <div class="route-card">
+          <div class="route-timeline">
+            <div class="timeline-item">
+              <div class="timeline-dot dot-start"></div>
+              <div class="timeline-content">
+                <span>Pickup Point</span>
+                <strong>Senayan City, Main Lobby</strong>
+                <span class="route-note">Near Starbucks entrance</span>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot dot-end"></div>
+              <div class="timeline-content">
+                <span>Drop-off</span>
+                <strong>SCBD — Equity Tower</strong>
+                <span class="route-note">Lobby drop-off area</span>
+              </div>
+            </div>
+          </div>
+          <div class="route-meta">
+            <div class="route-meta__item">
+              <span>🚘</span>
+              <div><strong>Toyota Innova Zenix</strong><span>B 1234 XYZ</span></div>
+            </div>
+            <div class="route-meta__item">
+              <span>⏱️</span>
+              <div><strong>~25 min</strong><span>Est. travel time</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Ride Members -->
+      <section class="section">
+        <h2 class="section-title" style="font-size:15px; margin-bottom:14px;">👥 Passengers</h2>
+        <div class="members-card">
+          <div class="capacity-info">
+            <span class="capacity-label">Ride Capacity</span>
+            <span class="capacity-value" id="ride-capacity">3 / 5 Joined</span>
+          </div>
+          <div class="progress-track" style="height:10px; margin-top:8px;">
+            <div class="progress-fill" id="ride-progress" style="--progress:60%;" data-progress="60"></div>
+          </div>
+          <div class="member-list">
+            <div class="member-row">
+              <div class="avatar-sm"><img src="https://ui-avatars.com/api/?name=Yu&background=7c3aed&color=fff" alt="Yu"/></div>
+              <div class="member-info"><strong>Yudi K.</strong><span>Host · Joined 2 min ago</span></div>
+            </div>
+            <div class="member-row">
+              <div class="avatar-sm"><img src="https://ui-avatars.com/api/?name=Ri&background=6366f1&color=fff" alt="Ri"/></div>
+              <div class="member-info"><strong>Rina S.</strong><span>Joined 5 min ago</span></div>
+            </div>
+            <div class="member-row">
+              <div class="avatar-sm"><img src="https://ui-avatars.com/api/?name=An&background=8b5cf6&color=fff" alt="An"/></div>
+              <div class="member-info"><strong>Andi P.</strong><span>Joined 8 min ago</span></div>
+            </div>
+            <div class="member-row member-row--empty">
+              <div class="avatar-sm empty">?</div>
+              <div class="member-info"><strong>Waiting for passenger...</strong></div>
+            </div>
+            <div class="member-row member-row--empty">
+              <div class="avatar-sm empty">?</div>
+              <div class="member-info"><strong>Waiting for passenger...</strong></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cost Breakdown -->
+      <section class="section">
+        <h2 class="section-title" style="font-size:15px; margin-bottom:14px;">💰 Cost Breakdown</h2>
+        <div class="payment-summary">
+          <div class="summary-row">
+            <span>Estimated Fare (Total)</span>
+            <span>Rp 75.000</span>
+          </div>
+          <div class="summary-row" style="color:var(--purple-700); font-weight:600;">
+            <span>Your Split (1/5)</span>
+            <span>Rp 15.000</span>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-row">
+            <span>Platform Admin Fee</span>
+            <span>Rp 2.000</span>
+          </div>
+          <div class="summary-row summary-total">
+            <span>Total to Pay</span>
+            <span>Rp 17.000</span>
+          </div>
+        </div>
+        <div class="info-alert" style="margin-top:12px; background:#fef3c7; border-color:#fde68a; color:#92400e;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <p><strong>Privacy First:</strong> Your phone number and exact location are never shared with other passengers. Coordination is handled by the BinBin system.</p>
+        </div>
+      </section>
+
+      <!-- In-App Chat -->
+      <section class="section" id="chat-section" style="display:none; padding-bottom:20px;">
+        <h2 class="section-title" style="font-size:15px; margin-bottom:14px;">💬 Live Group Chat</h2>
+        <div class="chat-container">
+          <div class="chat-messages" id="chat-messages">
+            <!-- Messages injected here -->
+            <div style="text-align:center; color:var(--gray-400); font-size:12px; margin-top:20px;">Secure chat established. Say hi!</div>
+          </div>
+          <div class="chat-input-area">
+            <input type="text" id="chat-input" placeholder="Type a message..." class="input-field" style="border-radius:20px; flex:1; height:40px; margin-bottom:0;">
+            <button id="chat-send" class="btn-icon" style="background:var(--purple-600); color:white; border:none; width:40px; height:40px; border-radius:50%; margin-left:8px; display:flex; align-items:center; justify-content:center;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Floating CTA -->
+    <div class="floating-cta-bar">
+      <div class="cta-price">
+        <span>You'll pay</span>
+        <strong>Rp 17.000</strong>
+      </div>
+      <button class="btn-join-detail btn-join-detail--ride" id="btn-ride-join" onclick="joinRide()">
+        Join & Pay Admin Fee
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Toast -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script>
+    const API = 'http://' + window.location.hostname + ':3001';
+    let currentLobbyId = null;
+
+    function showToast(msg, type = 'info') {
+      const ct = document.getElementById('toast-container');
+      const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
+      const t = document.createElement('div');
+      t.className = `toast toast--${type}`;
+      t.innerHTML = `<span class="toast-icon">${icons[type]||'ℹ️'}</span><span class="toast-msg">${msg}</span>`;
+      ct.appendChild(t);
+      setTimeout(() => { t.classList.add('toast-exit'); setTimeout(() => t.remove(), 300); }, 4000);
+    }
+
+    function formatRp(n) { return 'Rp ' + (n||0).toLocaleString('id-ID'); }
+
+    // Robust URL parsing
+    function getLobbyIdFromUrl() {
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get('id')) return sp.get('id');
+      const m = window.location.href.match(/[?&]id=([a-f0-9-]+)/i);
+      return m ? m[1] : null;
+    }
+
+    // Page Load Initialization
+    document.addEventListener('DOMContentLoaded', async () => {
+        currentLobbyId = getLobbyIdFromUrl();
+        console.log('[ride-detail] lobbyId:', currentLobbyId);
+        if(currentLobbyId) {
+            initChat(currentLobbyId);
+            await loadLobbyDetails(currentLobbyId);
+        } else {
+            showToast('Lobby ID tidak ditemukan di URL!', 'error');
+            setTimeout(() => window.location.href = 'index.html', 2000);
+        }
+    });
+
+    async function loadLobbyDetails(lobbyId) {
+        try {
+            const res = await fetch(`${API}/api/lobbies/${lobbyId}`, { credentials: 'include' });
+            const json = await res.json();
+            if(!res.ok) throw new Error(json.error || "Failed to load lobby");
+
+            const lobby = json.data;
+            
+            // 1. Update Title & Meta
+            document.querySelector('.detail-hero__title').textContent = lobby.title;
+            const routeNotes = document.querySelectorAll('.route-timeline .timeline-content strong');
+            if(lobby.metadata) {
+                if(lobby.metadata.pickupLocation && routeNotes[0]) routeNotes[0].textContent = lobby.metadata.pickupLocation;
+                if(lobby.metadata.dropoffLocation && routeNotes[1]) routeNotes[1].textContent = lobby.metadata.dropoffLocation;
+                if(lobby.metadata.departureTime) {
+                    document.getElementById('ride-countdown').textContent = lobby.metadata.departureTime;
+                }
+            }
+
+            // 2. Capacity & Progress
+            document.getElementById('ride-capacity').textContent = `${lobby.currentSlots} / ${lobby.maxSlots} Joined`;
+            document.getElementById('ride-progress').style.setProperty('--progress', `${(lobby.currentSlots / lobby.maxSlots) * 100}%`);
+
+            // 3. Dynamic Cost Breakdown
+            const elements = document.querySelectorAll('.payment-summary .summary-row span:nth-child(2)');
+            const splitLabel = document.querySelectorAll('.payment-summary .summary-row span:first-child');
+            if(elements.length >= 4) {
+               elements[0].textContent = formatRp(lobby.totalPrice);
+               if(splitLabel[1]) splitLabel[1].textContent = `Your Split (1/${lobby.currentSlots})`;
+               elements[1].textContent = formatRp(lobby.pricePerPerson);
+               elements[2].textContent = formatRp(lobby.memberFee);
+               elements[3].textContent = formatRp(lobby.totalToPay);
+               document.querySelector('.cta-price strong').textContent = formatRp(lobby.totalToPay);
+            }
+
+            // 4. Render Members
+            const memberList = document.querySelector('.member-list');
+            memberList.innerHTML = '';
+            lobby.members.forEach(m => {
+                memberList.innerHTML += `
+                <div class="member-row">
+                  <div class="avatar-sm"><img src="${m.userImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.userName)}&background=7c3aed&color=fff`}" alt=""/></div>
+                  <div class="member-info"><strong>${m.userName}</strong><span>${m.role === 'host' ? 'Host · ' : ''}Joined</span></div>
+                </div>`;
+            });
+            for(let i=0; i < lobby.maxSlots - lobby.currentSlots; i++) {
+                memberList.innerHTML += `
+                <div class="member-row member-row--empty">
+                  <div class="avatar-sm empty">?</div>
+                  <div class="member-info"><strong>Waiting for passenger...</strong></div>
+                </div>`;
+            }
+
+            // 5. Button State
+            const btn = document.getElementById('btn-ride-join');
+            const sessionRes = await fetch(`${API}/api/auth/get-session`, { credentials: 'include' });
+            const sessionData = await sessionRes.json();
+            if(sessionData?.user) {
+                const isMember = lobby.members.find(m => m.userId === sessionData.user.id);
+                if(isMember) {
+                    btn.dataset.joined = 'true';
+                    btn.textContent = '✓ Seat Reserved!';
+                    btn.classList.add('btn-joined');
+                    document.getElementById('chat-section').style.display = '';
+                } else if (lobby.currentSlots >= lobby.maxSlots) {
+                    btn.disabled = true;
+                    btn.textContent = 'Room is Full';
+                    btn.classList.add('btn-waiting');
+                }
+            }
+
+        } catch(e) {
+            console.error(e);
+            showToast('Gagal memuat detail Lobi: ' + e.message, 'error');
+        }
+    }
+
+    // Countdown Timer
+    let rideSeconds = 15 * 60;
+    const countdownEl = document.getElementById('ride-countdown');
+    const rideTimer = setInterval(() => {
+      rideSeconds--;
+      const m = Math.floor(rideSeconds / 60).toString().padStart(2, '0');
+      const s = (rideSeconds % 60).toString().padStart(2, '0');
+      if(countdownEl) countdownEl.textContent = m + ':' + s;
+      if (rideSeconds <= 0) {
+        clearInterval(rideTimer);
+        // Finalize lobby when timer expires
+        if (currentLobbyId) {
+          fetch(`${API}/api/lobbies/${currentLobbyId}/finalize`, {
+            method: 'POST', credentials: 'include'
+          }).then(() => {
+            showToast('Timer habis! Harga final telah dihitung.', 'info');
+            loadLobbyDetails(currentLobbyId);
+          }).catch(err => console.error('Finalize error:', err));
+        }
+      }
+    }, 1000);
+
+    // Join Button Logic
+    async function joinRide() {
+      const btn = document.getElementById('btn-ride-join');
+      if (btn.dataset.joined === 'true') return;
+      
+      btn.textContent = '⏳ Joining...';
+      btn.disabled = true;
+
+      try {
+        if (!currentLobbyId) throw new Error("Lobby ID not found in URL");
+
+        const res = await fetch(`${API}/api/lobbies/${currentLobbyId}/join`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Failed to join lobby");
+
+        btn.dataset.joined = 'true';
+        btn.textContent = '✓ Seat Reserved!';
+        btn.classList.add('btn-joined');
+        
+        showToast('Berhasil join! Group chat unlocked.', 'success');
+
+        // Re-render with updated data
+        await loadLobbyDetails(currentLobbyId);
+
+        // Show chat
+        document.getElementById('chat-section').style.display = '';
+        initChat(currentLobbyId);
+
+        // If full, show waiting state
+        const newSlots = json.data.currentSlots;
+        const maxSlots = json.data.maxSlots;
+        if (newSlots >= maxSlots) {
+          setTimeout(() => {
+            btn.textContent = '⏳ Waiting for Driver...';
+            btn.classList.remove('btn-joined');
+            btn.classList.add('btn-waiting');
+          }, 3000);
+        }
+
+      } catch (err) {
+        console.error(err);
+        showToast(err.message, 'error');
+        btn.textContent = 'Join & Pay Admin Fee';
+        btn.disabled = false;
+      }
+    }
+  </script>
+  <script src="chat.js"></script>
+</body>
+</html>
+

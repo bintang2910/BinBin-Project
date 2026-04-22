@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Digital Subscription — BinBin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="index.css" />
+  <style>
+    .chat-container { border: 1px solid var(--gray-200); border-radius: 12px; background: #fafafa; overflow: hidden; display: flex; flex-direction: column; height: 350px; }
+    .chat-messages { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+    .chat-bubble { max-width: 80%; padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.4; }
+    .chat-bubble.me { background: var(--purple-600); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+    .chat-bubble.other { background: white; color: var(--gray-800); border: 1px solid var(--gray-200); align-self: flex-start; border-bottom-left-radius: 4px; }
+    .chat-bubble-name { font-size: 11px; color: var(--gray-500); margin-bottom: 2px; }
+    .chat-bubble.me .chat-bubble-name { display: none; }
+    .chat-input-area { display: flex; padding: 10px; background: white; border-top: 1px solid var(--gray-200); align-items: center; }
+  </style>
+</head>
+<body>
+  <div class="app-shell page-transition-up">
+
+    <!-- Top Nav -->
+    <nav class="top-nav">
+      <div class="nav-logo">
+        <a href="index.html" class="icon-btn back-btn" aria-label="Back">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </a>
+        <span class="logo-text" style="font-size:18px;">Subscription Detail</span>
+      </div>
+    </nav>
+
+    <main class="main-content" style="padding-bottom:110px;">
+
+      <!-- Subs Hero Banner -->
+      <section class="detail-hero detail-hero--subs">
+        <div class="hero-bg-orb hero-bg-orb--1" style="background:#60a5fa;"></div>
+        <div class="hero-bg-orb hero-bg-orb--2" style="background:#818cf8;"></div>
+        <div class="detail-hero__content">
+          <div class="subs-logo-badge">
+            <span style="font-size:36px;">🎬</span>
+          </div>
+          <div class="lobby-card__badge lobby-card__badge--digital" style="margin-bottom:8px;">🎬 Digital Subscription</div>
+          <h1 class="detail-hero__title" style="color: var(--white);" id="subs-title">Loading...</h1>
+          <p class="detail-hero__sub" style="color: rgba(255,255,255,0.75);" id="subs-sub"></p>
+        </div>
+      </section>
+
+      <!-- Subscription Info -->
+      <section class="section">
+        <h2 class="section-title" style="font-size:15px; margin-bottom:14px;">📋 Subscription Info</h2>
+        <div class="subs-info-grid">
+          <div class="subs-info-card">
+            <span class="subs-info__icon">📅</span>
+            <strong>Duration</strong>
+            <span id="subs-duration">—</span>
+          </div>
+          <div class="subs-info-card">
+            <span class="subs-info__icon">📺</span>
+            <strong>Slots</strong>
+            <span id="subs-slots-info">—</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Account Rules -->
+      <section class="section">
+        <h2 class="section-title" style="font-size:15px; margin-bottom:14px;">📜 Account Rules</h2>
+        <div class="subs-rules">
+          <div class="rule-item">
+            <div class="rule-num">1</div>
+            <div class="rule-text">
+              <strong>Do NOT change the password</strong>
+              <span>The host manages account credentials.</span>
+            </div>
+          </div>
+          <div class="rule-item">
+            <div class="rule-num">2</div>
+            <div class="rule-text">
+              <strong>Use only your assigned profile</strong>
+              <span>Each member gets one profile slot.</span>
+            </div>
+          </div>
+          <div class="rule-item">
+            <div class="rule-num">3</div>
+            <div class="rule-text">
+              <strong>Share credentials via in-app chat only</strong>
+              <span>Host will share ID/password in the group chat. Chat auto-deletes after 1 month.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Members -->
+      <section class="section">
+        <h2 class="section-title" style="font-size:15px; margin-bottom:14px;">👥 Group Members</h2>
+        <div class="members-card" style="border-color: #bfdbfe;">
+          <div class="capacity-info">
+            <span class="capacity-label">Subscription Slots</span>
+            <span class="capacity-value" id="subs-capacity" style="color:#2563eb;">Loading...</span>
+          </div>
+          <div class="progress-track" style="height:10px; margin-top:8px;">
+            <div class="progress-fill" id="subs-progress" style="--progress:0%; background: linear-gradient(90deg, #60a5fa, #2563eb);"></div>
+          </div>
+          <div class="member-list" id="subs-members" style="margin-top:14px;"></div>
+        </div>
+      </section>
+
+      <!-- Cost Breakdown -->
+      <section class="section">
+        <h2 class="section-title" style="font-size:15px; margin-bottom:14px;">💰 Cost Breakdown</h2>
+        <div class="payment-summary" style="border-color:#bfdbfe;">
+          <div class="summary-row">
+            <span id="cost-full-label">Full Price</span>
+            <span id="cost-full">—</span>
+          </div>
+          <div class="summary-row" style="color:#2563eb; font-weight:600;">
+            <span id="cost-split-label">Your Share</span>
+            <span id="cost-split">—</span>
+          </div>
+          <div class="summary-row" style="color:var(--accent-green); font-size:13px;">
+            <span>💸 You save</span>
+            <span id="cost-savings">—</span>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-row">
+            <span>Platform Admin Fee (one-time)</span>
+            <span id="cost-fee">—</span>
+          </div>
+          <div class="summary-row summary-total" style="color:#1e3a8a;">
+            <span>Pay Now</span>
+            <span id="cost-pay">—</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- In-App Group Chat (unlocked after join) -->
+      <section class="section" id="chat-section" style="display:none; padding-bottom:20px;">
+        <h2 class="section-title" style="font-size:15px; margin-bottom:14px;">💬 Group Chat — Share Credentials</h2>
+        <div class="info-alert" style="margin-bottom:12px; background:#dbeafe; border-color:#93c5fd; color:#1e3a8a;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <p>Chat ini <strong>otomatis dihapus</strong> setelah 1 bulan. Host share ID/password di sini.</p>
+        </div>
+        <div class="chat-container">
+          <div class="chat-messages" id="chat-messages">
+            <div style="text-align:center; color:var(--gray-400); font-size:12px; margin-top:20px;">Secure chat established.</div>
+          </div>
+          <div class="chat-input-area">
+            <input type="text" id="chat-input" placeholder="Type a message..." class="input-field" style="border-radius:20px; flex:1; height:40px; margin-bottom:0;">
+            <button id="chat-send" style="background:var(--purple-600); color:white; border:none; width:40px; height:40px; border-radius:50%; margin-left:8px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Floating CTA -->
+    <div class="floating-cta-bar" id="subs-cta-bar">
+      <div class="cta-price">
+        <span>First payment</span>
+        <strong style="color:#1e3a8a;" id="cta-price">—</strong>
+      </div>
+      <button class="btn-join-detail btn-join-detail--subs" id="btn-subs-join" onclick="joinSubs()">
+        Join & Pay Admin Fee
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Toast -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script>
+    const API = 'http://' + window.location.hostname + ':3001';
+    let currentLobbyId = null;
+
+    function showToast(msg, type = 'info') {
+      const ct = document.getElementById('toast-container');
+      const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
+      const t = document.createElement('div');
+      t.className = `toast toast--${type}`;
+      t.innerHTML = `<span class="toast-icon">${icons[type]||'ℹ️'}</span><span class="toast-msg">${msg}</span>`;
+      ct.appendChild(t);
+      setTimeout(() => { t.classList.add('toast-exit'); setTimeout(() => t.remove(), 300); }, 4000);
+    }
+
+    function formatRp(n) { return 'Rp ' + (n||0).toLocaleString('id-ID'); }
+
+    // ─── Page Init ───
+    function getLobbyIdFromUrl() {
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get('id')) return sp.get('id');
+      const m = window.location.href.match(/[?&]id=([a-f0-9-]+)/i);
+      return m ? m[1] : null;
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      currentLobbyId = getLobbyIdFromUrl();
+      console.log('[subs-detail] lobbyId:', currentLobbyId);
+      if (currentLobbyId) {
+        await loadLobbyDetails(currentLobbyId);
+        initChat(currentLobbyId);
+      } else {
+        showToast('Lobby ID tidak ditemukan di URL!', 'error');
+        setTimeout(() => window.location.href = 'index.html', 2000);
+      }
+    });
+
+    async function loadLobbyDetails(lobbyId) {
+      try {
+        const res = await fetch(`${API}/api/lobbies/${lobbyId}`, { credentials: 'include' });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Failed to load lobby');
+        const lobby = json.data;
+
+        // Title
+        document.getElementById('subs-title').textContent = lobby.title;
+        document.getElementById('subs-sub').textContent = lobby.metadata?.duration
+          ? `${lobby.metadata.duration} subscription` : 'Digital Subscription';
+
+        // Info cards
+        document.getElementById('subs-duration').textContent = lobby.metadata?.duration || '1 Month';
+        document.getElementById('subs-slots-info').textContent = `${lobby.maxSlots} slots`;
+
+        // Capacity
+        document.getElementById('subs-capacity').textContent = `${lobby.currentSlots} / ${lobby.maxSlots} Joined`;
+        document.getElementById('subs-progress').style.setProperty('--progress', `${(lobby.currentSlots / lobby.maxSlots) * 100}%`);
+
+        // Members
+        const memberList = document.getElementById('subs-members');
+        memberList.innerHTML = '';
+        lobby.members.forEach((m, idx) => {
+          memberList.innerHTML += `
+            <div class="member-row">
+              <div class="avatar-sm"><img src="${m.userImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.userName)}&background=2563eb&color=fff`}" alt=""/></div>
+              <div class="member-info"><strong>${m.userName}</strong><span>${m.role === 'host' ? 'Host · ' : ''}Profile ${idx + 1}</span></div>
+              ${m.role === 'host' ? '<span class="member-badge host" style="font-size:10px; background:#dbeafe; color:#2563eb; padding:2px 8px; border-radius:999px; font-weight:700;">HOST</span>' : ''}
+            </div>`;
+        });
+        for (let i = 0; i < lobby.maxSlots - lobby.currentSlots; i++) {
+          memberList.innerHTML += `
+            <div class="member-row member-row--empty">
+              <div class="avatar-sm empty">?</div>
+              <div class="member-info"><strong>${lobby.maxSlots - lobby.currentSlots - i} slot available</strong></div>
+            </div>`;
+        }
+
+        // Cost
+        const savings = lobby.totalPrice - lobby.pricePerPerson;
+        const savingsPercent = Math.round((savings / lobby.totalPrice) * 100);
+        document.getElementById('cost-full-label').textContent = `${lobby.title} (Full)`;
+        document.getElementById('cost-full').textContent = `${formatRp(lobby.totalPrice)}/mo`;
+        document.getElementById('cost-split-label').textContent = `Your Share (1/${lobby.currentSlots})`;
+        document.getElementById('cost-split').textContent = `${formatRp(lobby.pricePerPerson)}/mo`;
+        document.getElementById('cost-savings').textContent = `${formatRp(savings)}/mo (${savingsPercent}% off!)`;
+        document.getElementById('cost-fee').textContent = formatRp(lobby.memberFee);
+        document.getElementById('cost-pay').textContent = formatRp(lobby.totalToPay);
+        document.getElementById('cta-price').textContent = formatRp(lobby.totalToPay);
+
+        // Button state
+        const btn = document.getElementById('btn-subs-join');
+        const sessionRes = await fetch(`${API}/api/auth/get-session`, { credentials: 'include' });
+        const sessionData = await sessionRes.json();
+        if (sessionData?.user) {
+          const isMember = lobby.members.find(m => m.userId === sessionData.user.id);
+          if (isMember) {
+            btn.dataset.joined = 'true';
+            btn.textContent = '✓ Subscription Joined!';
+            btn.classList.add('btn-joined');
+            document.getElementById('chat-section').style.display = '';
+          } else if (lobby.currentSlots >= lobby.maxSlots) {
+            btn.disabled = true;
+            btn.textContent = 'All Slots Taken';
+          }
+        }
+      } catch (e) {
+        console.error(e);
+        showToast('Gagal memuat detail lobby: ' + e.message, 'error');
+      }
+    }
+
+    async function joinSubs() {
+      const btn = document.getElementById('btn-subs-join');
+      if (btn.dataset.joined === 'true') return;
+
+      btn.textContent = '⏳ Joining...';
+      btn.disabled = true;
+
+      try {
+        if (!currentLobbyId) throw new Error('Lobby ID not found');
+
+        const res = await fetch(`${API}/api/lobbies/${currentLobbyId}/join`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Failed to join');
+
+        btn.dataset.joined = 'true';
+        btn.textContent = '✓ Subscription Joined!';
+        btn.classList.add('btn-joined');
+
+        showToast('Berhasil join! Chat unlocked — minta credentials ke host.', 'success');
+
+        // Re-render
+        await loadLobbyDetails(currentLobbyId);
+
+        // Show chat
+        document.getElementById('chat-section').style.display = '';
+        initChat(currentLobbyId);
+
+      } catch (err) {
+        console.error(err);
+        showToast(err.message, 'error');
+        btn.textContent = 'Join & Pay Admin Fee';
+        btn.disabled = false;
+      }
+    }
+  </script>
+  <script src="chat.js"></script>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Activity — BinBin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="index.css" />
+</head>
+<body>
+  <div class="app-shell">
+
+    <nav class="top-nav">
+      <div class="nav-logo">
+        <span class="logo-icon">⬡</span>
+        <span class="logo-text" style="font-size:18px;">My Activity</span>
+      </div>
+    </nav>
+
+    <main class="main-content">
+
+      <!-- Tab Toggle -->
+      <section class="section" style="padding-bottom:0;">
+        <div class="tab-toggle">
+          <button class="tab-btn tab-btn--active" onclick="switchTab(this, 'active-list')">Active</button>
+          <button class="tab-btn" onclick="switchTab(this, 'history-list')">History</button>
+        </div>
+      </section>
+
+      <!-- Active Groups -->
+      <section class="section" id="active-list">
+        <div id="active-loading" style="padding:40px; text-align:center; color:var(--gray-400); font-size:14px; width:100%;">
+          Loading activity...
+        </div>
+      </section>
+
+      <!-- History (hidden by default) -->
+      <section class="section" id="history-list" style="display:none;">
+        <div id="history-loading" style="padding:40px; text-align:center; color:var(--gray-400); font-size:14px; width:100%;">
+          Loading history...
+        </div>
+      </section>
+
+      <div class="bottom-spacer"></div>
+    </main>
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav">
+      <a href="index.html" class="bottom-nav__item" aria-label="Home">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>Home</span>
+      </a>
+      <a href="search.html" class="bottom-nav__item" aria-label="Search">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span>Search</span>
+      </a>
+      <a href="create-group.html" class="bottom-nav__item bottom-nav__item--fab" aria-label="Create Group">
+        <div class="fab-circle"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+      </a>
+      <a href="activity.html" class="bottom-nav__item bottom-nav__item--active" aria-label="Activity">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span>Activity</span>
+      </a>
+      <a href="wallet.html" class="bottom-nav__item" aria-label="Wallet">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        <span>Wallet</span>
+      </a>
+    </nav>
+  </div>
+
+  <script>
+    const API = 'http://' + window.location.hostname + ':3001';
+
+    function switchTab(btn, showId) {
+      document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('tab-btn--active'));
+      btn.classList.add('tab-btn--active');
+      document.getElementById('active-list').style.display = showId === 'active-list' ? '' : 'none';
+      document.getElementById('history-list').style.display = showId === 'history-list' ? '' : 'none';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchActivity('active', 'active-list');
+      fetchActivity('completed', 'history-list');
+    });
+
+    async function fetchActivity(status, containerId) {
+      const container = document.getElementById(containerId);
+      try {
+        const res = await fetch(`${API}/api/lobbies/me?status=${status}`, { credentials: 'include' });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Failed to fetch');
+
+        const lobbies = json.data || [];
+        container.innerHTML = '';
+
+        if (lobbies.length === 0) {
+           container.innerHTML = `<div style="padding:40px; text-align:center; color:var(--gray-400); font-size:14px; width:100%;">No ${status} activity.</div>`;
+           return;
+        }
+
+        const badges = {
+          ride: { icon: '🚗', bg: '#ede9fe', color: 'var(--purple-600)' },
+          food: { icon: '🍔', bg: '#fef3c7', color: '#d97706' },
+          subs: { icon: '🎬', bg: '#dbeafe', color: '#2563eb' }
+        };
+        const detailPages = { ride: 'ride-detail', food: 'food-detail', subs: 'subs-detail' };
+
+        lobbies.forEach(lobby => {
+          const badge = badges[lobby.category] || badges.ride;
+          const isDone = status === 'completed';
+          let statusLabel = lobby.status === 'open' ? 'Waiting' : 'In Progress';
+          if(isDone) statusLabel = 'Completed';
+          const statusCss = isDone ? 'status--done' : (lobby.status === 'open' ? 'status--waiting' : 'status--active');
+          
+          let metaText = 'View lobby details';
+          if (lobby.metadata) {
+            if (lobby.category === 'ride' && lobby.metadata.departureTime) metaText = `Departs ${lobby.metadata.departureTime}`;
+            if (lobby.category === 'food') metaText = 'Order running';
+            if (lobby.category === 'subs' && lobby.metadata.duration) metaText = `Duration: ${lobby.metadata.duration}`;
+          }
+
+          container.innerHTML += `
+            <a href="${detailPages[lobby.category]}?id=${lobby.id}" class="activity-card" ${isDone ? 'style="opacity:0.6;"' : ''}>
+              <div class="activity-card__icon" style="background:${isDone ? 'var(--gray-100)' : badge.bg}; color:${isDone ? 'var(--gray-500)' : badge.color};">${badge.icon}</div>
+              <div class="activity-card__info">
+                <strong>${lobby.title}</strong>
+                <span>${metaText}</span>
+              </div>
+              <div class="activity-status ${statusCss}">${statusLabel}</div>
+            </a>
+          `;
+        });
+      } catch(e) {
+          console.error(e);
+          container.innerHTML = `<div style="padding:40px; text-align:center; color:#dc2626; font-size:14px; width:100%;">Error loading</div>`;
+      }
+    }
+  </script>
+</body>
+</html>

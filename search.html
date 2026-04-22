@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Search — BinBin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="index.css" />
+</head>
+<body>
+  <div class="app-shell">
+
+    <!-- Top Nav -->
+    <nav class="top-nav">
+      <div class="nav-logo">
+        <span class="logo-icon">⬡</span>
+        <span class="logo-text">Bin<span class="logo-accent">Bin</span></span>
+      </div>
+    </nav>
+
+    <main class="main-content">
+
+      <!-- Search Bar -->
+      <section class="section" style="padding-top:20px;">
+        <div class="search-bar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="search-input" class="input-field" placeholder="Search groups, rides, food..." style="border:none; background:none; padding:10px; flex:1;" />
+        </div>
+
+        <!-- Filter Chips -->
+        <div class="filter-chips" style="margin-top:14px;" id="search-chips">
+          <span class="chip chip--active" data-category="all">All</span>
+          <span class="chip" data-category="ride">🚗 Rides</span>
+          <span class="chip" data-category="food">🍔 Food</span>
+          <span class="chip" data-category="subs">🎬 Digital</span>
+        </div>
+      </section>
+
+      <!-- Search Results -->
+      <section class="section">
+        <div class="section-header" style="margin-bottom:16px;">
+          <h2 class="section-title" id="results-title">Search Results</h2>
+        </div>
+        <div id="search-results" class="search-results-list" style="display: flex; flex-direction: column; gap: 16px;">
+          
+          <div id="search-loading" style="padding:40px; text-align:center; color:var(--gray-400); font-size:14px; width:100%;">
+            Loading lobbies...
+          </div>
+
+        </div>
+      </section>
+
+      <section class="section" style="text-align:center; padding-top:40px;">
+        <p style="color:var(--gray-400); font-size:13px;">Type to discover more groups near you</p>
+      </section>
+
+      <div class="bottom-spacer"></div>
+    </main>
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav">
+      <a href="index.html" class="bottom-nav__item" aria-label="Home">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>Home</span>
+      </a>
+      <a href="search.html" class="bottom-nav__item bottom-nav__item--active" aria-label="Search">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span>Search</span>
+      </a>
+      <a href="create-group.html" class="bottom-nav__item bottom-nav__item--fab" aria-label="Create Group">
+        <div class="fab-circle"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+      </a>
+      <a href="activity.html" class="bottom-nav__item" aria-label="Activity">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span>Activity</span>
+      </a>
+      <a href="wallet.html" class="bottom-nav__item" aria-label="Wallet">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        <span>Wallet</span>
+      </a>
+    </nav>
+  </div>
+  <script src="search.js"></script>
+</body>
+</html>

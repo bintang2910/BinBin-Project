@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="BinBin — Join groups to split costs on rides, food, and digital subscriptions. Save more together!" />
+  <title>BinBin — Share Costs, Save More!</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="index.css" />
+</head>
+<body>
+  <div class="app-shell">
+
+    <!-- ─── Top Navigation Bar ─── -->
+    <nav id="top-nav" class="top-nav">
+      <div class="nav-logo" id="nav-logo">
+        <span class="logo-icon">⬡</span>
+        <span class="logo-text">Bin<span class="logo-accent">Bin</span></span>
+      </div>
+      <div class="nav-actions">
+        <button id="btn-notifications" class="icon-btn" aria-label="Notifications">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="notif-dot"></span>
+        </button>
+        <a href="profile.html" id="btn-profile" class="avatar-btn" aria-label="User Profile">
+          <div class="avatar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+        </a>
+      </div>
+    </nav>
+
+    <!-- ─── Main Scrollable Content ─── -->
+    <main class="main-content">
+
+      <!-- Hero Section -->
+      <section id="hero" class="hero">
+        <div class="hero-bg-orb hero-bg-orb--1"></div>
+        <div class="hero-bg-orb hero-bg-orb--2"></div>
+        <div class="hero-content">
+          <p class="hero-eyebrow">Welcome to BinBin 👋</p>
+          <h1 class="hero-title">Share Costs,<br/><span class="hero-highlight">Save More!</span></h1>
+          <p class="hero-sub">Join groups, split bills, and save on everyday services — together.</p>
+          <button id="btn-explore" class="btn-primary hero-cta">
+            Explore Groups
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </button>
+        </div>
+      </section>
+
+      <!-- Categories Section -->
+      <section id="categories" class="section categories">
+        <div class="section-header">
+          <h2 class="section-title">Categories</h2>
+          <a href="#" class="section-link" id="link-see-all-categories">See all</a>
+        </div>
+        <div class="category-grid">
+
+          <a href="category?type=ride" id="cat-ride" class="category-card" data-category="ride">
+            <div class="category-icon category-icon--ride">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2-2.2-3.3C13 5.6 12 5 11 5H7c-1.1 0-2.1.6-2.6 1.5L3 9"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="17.5" r="2.5"/><path d="M3 9h16"/></svg>
+            </div>
+            <span class="category-label">Ride Sharing</span>
+            <span class="category-count">12 active</span>
+          </a>
+
+          <a href="category?type=food" id="cat-food" class="category-card" data-category="food">
+            <div class="category-icon category-icon--food">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+            </div>
+            <span class="category-label">Food Order</span>
+            <span class="category-count">8 active</span>
+          </a>
+
+          <a href="category?type=subs" id="cat-digital" class="category-card" data-category="digital">
+            <div class="category-icon category-icon--digital">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
+            </div>
+            <span class="category-label">Digital Subs</span>
+            <span class="category-count">15 active</span>
+          </a>
+
+        </div>
+      </section>
+
+      <!-- Live Lobbies Section -->
+      <section class="section lobbies" style="margin-top:8px;">
+        <div class="section-header">
+          <h2 class="section-title"><span class="live-dot pulse"></span> Live Lobbies</h2>
+          <a href="search.html" class="see-all">View all</a>
+        </div>
+        
+        <div class="lobby-scroll" id="home-live-lobbies">
+           <!-- Real live lobbies will be injected here -->
+           <div style="padding:20px; font-size:13px; color:var(--gray-500);">Fetching active rooms...</div>
+        </div>
+        <div class="carousel-dots" id="carousel-dots"></div>
+      </section>
+
+      <!-- Spacer for bottom nav -->
+      <div class="bottom-spacer"></div>
+    </main>
+
+    <!-- ─── Bottom Navigation Bar ─── -->
+    <nav id="bottom-nav" class="bottom-nav">
+      <a href="index.html" class="bottom-nav__item bottom-nav__item--active" aria-label="Home">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>Home</span>
+      </a>
+      <a href="search.html" class="bottom-nav__item" aria-label="Search">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span>Search</span>
+      </a>
+      <a href="create-group.html" id="tab-create" class="bottom-nav__item bottom-nav__item--fab" aria-label="Create Group">
+        <div class="fab-circle">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </div>
+      </a>
+      <a href="activity.html" class="bottom-nav__item" aria-label="Activity">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span>Activity</span>
+      </a>
+      <a href="wallet.html" class="bottom-nav__item" aria-label="Wallet">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        <span>Wallet</span>
+      </a>
+    </nav>
+
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="index.js"></script>
+  <script>
+    const API_HOME = 'http://' + window.location.hostname + ':3001';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const container = document.getElementById('home-live-lobbies');
+      const dotsContainer = document.getElementById('carousel-dots');
+      if(!container) return;
+
+      try {
+        const res = await fetch(`${API_HOME}/api/lobbies?status=open&limit=10`, { credentials: 'include' });
+        const json = await res.json();
+        
+        if (!res.ok) throw new Error(json.error || 'Failed to fetch');
+
+        const allLobbies = json.data || [];
+        container.innerHTML = '';
+
+        if(allLobbies.length === 0) {
+            container.innerHTML = '<div style="padding:20px; font-size:13px; color:var(--gray-500);">No active lobbies right now. Start one!</div>';
+            return;
+        }
+
+        // Show top 1 from each category
+        const rideLobby = allLobbies.find(l => l.category === 'ride');
+        const foodLobby = allLobbies.find(l => l.category === 'food');
+        const subsLobby = allLobbies.find(l => l.category === 'subs');
+
+        const lobbies = [];
+        if (rideLobby) lobbies.push(rideLobby);
+        if (foodLobby) lobbies.push(foodLobby);
+        if (subsLobby) lobbies.push(subsLobby);
+
+        const detailPages = { ride: 'ride-detail', food: 'food-detail', subs: 'subs-detail' };
+        const badges = {
+          ride: { icon: '🚗', label: 'Ride', css: 'ride' },
+          food: { icon: '🍔', label: 'Food', css: 'food' },
+          subs: { icon: '🎬', label: 'Digital', css: 'digital' },
+        };
+
+        lobbies.forEach((lobby, idx) => {
+          const badge = badges[lobby.category] || badges.ride;
+          
+          let metaText = lobby.title;
+          if (lobby.category === 'ride' && lobby.metadata?.pickupLocation) {
+            metaText = `${lobby.metadata.pickupLocation} → ${lobby.metadata.dropoffLocation || '...'}`;
+          } else if (lobby.category === 'food' && lobby.metadata?.restaurantName) {
+            metaText = lobby.metadata.restaurantName;
+          } else if (lobby.category === 'subs' && lobby.metadata?.serviceName) {
+            metaText = lobby.metadata.serviceName;
+          }
+
+          const progress = Math.round((lobby.currentSlots / lobby.maxSlots) * 100);
+          const pricePerPerson = Math.ceil(lobby.totalPrice / lobby.currentSlots);
+
+          // Distribution badge for food
+          let distBadgeHtml = '';
+          if (lobby.category === 'food' && lobby.distributionMethod) {
+            distBadgeHtml = lobby.distributionMethod === 'pickup'
+              ? '<span class="dist-badge dist-badge--pickup">📍 Pickup</span>'
+              : '<span class="dist-badge dist-badge--delivery">🚚 Delivery</span>';
+          }
+
+          container.innerHTML += `
+            <a href="${detailPages[lobby.category]}?id=${lobby.id}" class="lobby-card" style="text-decoration:none; color:inherit;">
+              <div class="lobby-card__badge lobby-card__badge--${badge.css}">${badge.icon} ${badge.label}</div>
+              ${distBadgeHtml}
+              <h3 class="lobby-card__title" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${lobby.title}</h3>
+              <p class="lobby-card__meta" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:relative; top:2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                ${metaText}
+              </p>
+              <div class="lobby-card__capacity">
+                <div class="capacity-info">
+                  <span class="capacity-label" style="font-size:11px;">Capacity</span>
+                  <span class="capacity-value" style="font-size:11px; color:var(--purple-700);">${lobby.currentSlots} / ${lobby.maxSlots}</span>
+                </div>
+                <div class="progress-track" style="margin-top:4px;">
+                  <div class="progress-fill" style="width:${progress}%;"></div>
+                </div>
+              </div>
+              <div class="lobby-card__price">
+                <span class="price-label">Per person</span>
+                <span class="price-value">Rp ${pricePerPerson.toLocaleString('id-ID')}</span>
+              </div>
+            </a>
+          `;
+        });
+
+        // Render carousel dots
+        if (dotsContainer && lobbies.length > 1) {
+          dotsContainer.innerHTML = '';
+          lobbies.forEach((_, idx) => {
+            const dot = document.createElement('button');
+            dot.className = 'carousel-dot' + (idx === 0 ? ' active' : '');
+            dot.setAttribute('aria-label', `Slide ${idx + 1}`);
+            dot.addEventListener('click', () => {
+              const cards = container.querySelectorAll('.lobby-card');
+              if (cards[idx]) cards[idx].scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+            });
+            dotsContainer.appendChild(dot);
+          });
+
+          // Update dots on scroll
+          container.addEventListener('scroll', () => {
+            const scrollLeft = container.scrollLeft;
+            const cardWidth = container.querySelector('.lobby-card')?.offsetWidth || 280;
+            const gap = 14;
+            const activeIdx = Math.round(scrollLeft / (cardWidth + gap));
+            dotsContainer.querySelectorAll('.carousel-dot').forEach((dot, i) => {
+              dot.classList.toggle('active', i === activeIdx);
+            });
+          });
+        }
+
+      } catch (e) {
+         console.error(e);
+         if(container) container.innerHTML = '<div style="padding:20px; font-size:13px; color:#dc2626;">Error loading lobbies</div>';
+      }
+    });
+  </script>
+</body>
+</html>
+

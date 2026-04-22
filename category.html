@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Category — BinBin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="index.css" />
+</head>
+<body>
+  <div class="app-shell">
+
+    <!-- Top Nav with Back Button -->
+    <nav class="top-nav" style="justify-content: flex-start; gap: 12px; padding: 16px;">
+      <a href="index.html" style="color: var(--gray-800); text-decoration: none; padding: 4px; display: flex; align-items: center; justify-content: center; background: #f3f4f6; border-radius: 50%;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </a>
+      <h1 id="category-title" style="font-size: 18px; font-weight: 700; color: var(--gray-900);">Loading...</h1>
+    </nav>
+
+    <main class="main-content">
+
+      <!-- Category Lobbies List -->
+      <section class="section" style="padding-top:20px;">
+        <div id="category-results" class="search-results-list" style="display: flex; flex-direction: column; gap: 16px;">
+          
+          <div id="category-loading" style="padding:40px; text-align:center; color:var(--gray-400); font-size:14px; width:100%;">
+            Loading lobbies... <span class="auth-spinner" style="display:inline-block; border-color:var(--gray-400); border-top-color:transparent; margin-left:8px;"></span>
+          </div>
+
+        </div>
+      </section>
+
+      <div class="bottom-spacer"></div>
+    </main>
+
+  </div>
+  <script src="category.js"></script>
+</body>
+</html>
