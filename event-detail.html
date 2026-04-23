@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Event Detail — BinBin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="index.css" />
+  <style>
+    /* Chat UI Styles */
+    .chat-container { border: 1px solid var(--gray-200); border-radius: 12px; background: #fafafa; overflow: hidden; display: flex; flex-direction: column; height: 350px; }
+    .chat-messages { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+    .chat-bubble { max-width: 80%; padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.4; position: relative; }
+    .chat-bubble.me { background: var(--purple-600); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+    .chat-bubble.other { background: white; color: var(--gray-800); border: 1px solid var(--gray-200); align-self: flex-start; border-bottom-left-radius: 4px; }
+    .chat-bubble-name { font-size: 11px; color: var(--gray-500); margin-bottom: 2px; }
+    .chat-bubble.me .chat-bubble-name { display: none; }
+    .chat-input-area { display: flex; padding: 10px; background: white; border-top: 1px solid var(--gray-200); align-items: center; }
+    /* Event-specific styles */
+    .event-hero { background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 50%, #86efac 100%); border-radius: 20px; padding: 28px 24px; margin-bottom: 20px; position: relative; overflow: hidden; }
+    .event-hero__title { font-size: 22px; font-weight: 800; color: #14532d; margin: 8px 0 4px; }
+    .event-meta { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+    .event-meta-item { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #166534; }
+    .event-meta-item svg { flex-shrink: 0; }
+    .event-desc { background: white; border-radius: 12px; padding: 16px; margin-top: 12px; font-size: 14px; color: var(--gray-700); line-height: 1.6; border: 1px solid #dcfce7; }
+    /* Rating buttons */
+    .rating-section { display: flex; gap: 12px; margin-top: 16px; }
+    .rate-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; border-radius: 12px; border: 2px solid var(--gray-200); background: white; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .rate-btn:hover { transform: scale(1.02); }
+    .rate-btn--like { color: #16a34a; }
+    .rate-btn--like:hover, .rate-btn--like.active { background: #dcfce7; border-color: #16a34a; }
+    .rate-btn--dislike { color: #dc2626; }
+    .rate-btn--dislike:hover, .rate-btn--dislike.active { background: #fef2f2; border-color: #dc2626; }
+    .host-reputation { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--gray-500); margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="app-shell page-transition-up">
+
+    <!-- Top Nav -->
+    <nav class="top-nav">
+      <div class="nav-logo">
+        <a href="index.html" class="icon-btn back-btn" aria-label="Back">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </a>
+        <span class="logo-text" style="font-size:18px;">Event Detail</span>
+      </div>
+      <div class="nav-actions">
+        <button class="icon-btn" aria-label="Share">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </button>
+      </div>
+    </nav>
+
+    <main class="main-content" style="padding-bottom:110px;">
+
+      <!-- Event Hero Banner -->
+      <section class="event-hero">
+        <div class="hero-bg-orb hero-bg-orb--1" style="background:#86efac;"></div>
+        <div class="lobby-card__badge" style="background:rgba(22,163,74,0.15); color:#16a34a; margin-bottom:8px;">🎉 Event / Bebas</div>
+        <h1 class="event-hero__title" id="event-title">Loading...</h1>
+        <div class="event-meta">
+          <div class="event-meta-item" id="meta-location">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span>—</span>
+          </div>
+          <div class="event-meta-item" id="meta-date">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span>—</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Description -->
+      <section class="section" id="desc-section" style="display:none;">
+        <h3 class="section-title" style="font-size:15px; color:var(--gray-600); margin-bottom:8px;">📝 Deskripsi</h3>
+        <div class="event-desc" id="event-description"></div>
+      </section>
+
+      <!-- Cost Breakdown -->
+      <section class="section" style="margin-top:4px;">
+        <h3 class="section-title" style="font-size:15px; color:var(--gray-600); margin-bottom:12px;">💰 Cost Breakdown</h3>
+        <div class="detail-cost-grid">
+          <div class="cost-row"><span>Total Biaya</span><strong id="cost-total">—</strong></div>
+          <div class="cost-row"><span>Peserta</span><strong id="cost-slots">—</strong></div>
+          <div class="cost-row cost-row--highlight"><span>Biaya / Orang</span><strong id="cost-per-person">—</strong></div>
+          <div class="cost-row"><span>Admin Fee (joiner)</span><strong id="cost-admin">—</strong></div>
+          <div class="cost-row cost-row--total"><span>Total Bayar (joiner)</span><strong id="cost-total-pay">—</strong></div>
+        </div>
+      </section>
+
+      <!-- Slot Progress -->
+      <section class="section" style="margin-top:4px;">
+        <div class="detail-slots">
+          <div class="detail-slots__header">
+            <span class="detail-slots__label">Peserta</span>
+            <span class="detail-slots__count" id="slot-display">0 / 0</span>
+          </div>
+          <div class="detail-slots__bar"><div class="detail-slots__fill" id="slot-fill" style="width:10%;"></div></div>
+        </div>
+      </section>
+
+      <!-- Host Info -->
+      <section class="section" style="margin-top:4px;">
+        <h3 class="section-title" style="font-size:15px; color:var(--gray-600); margin-bottom:12px;">👤 Host</h3>
+        <div id="host-info" style="display:flex; align-items:center; gap:12px;">
+          <div class="avatar-sm"><img id="host-avatar" src="" alt="Host" /></div>
+          <div>
+            <strong id="host-name">—</strong>
+            <div class="host-reputation" id="host-reputation">
+              <span>👍 <span id="host-likes">0</span></span>
+              <span>👎 <span id="host-dislikes">0</span></span>
+            </div>
+          </div>
+        </div>
+        <!-- Rating Buttons (shown only for members) -->
+        <div class="rating-section" id="rating-section" style="display:none;">
+          <button class="rate-btn rate-btn--like" id="btn-like" onclick="rateHost(true)">👍 Like</button>
+          <button class="rate-btn rate-btn--dislike" id="btn-dislike" onclick="rateHost(false)">👎 Dislike</button>
+        </div>
+      </section>
+
+      <!-- Members List -->
+      <section class="section" style="margin-top:4px;">
+        <h3 class="section-title" style="font-size:15px; color:var(--gray-600); margin-bottom:12px;">👥 Members</h3>
+        <div class="member-list" id="member-list"></div>
+      </section>
+
+      <!-- Group Chat -->
+      <section class="section" id="chat-section" style="margin-top:4px; display:none;">
+        <h3 class="section-title" style="font-size:15px; color:var(--gray-600); margin-bottom:12px;">💬 Group Chat</h3>
+        <div class="chat-container">
+          <div class="chat-messages" id="chat-messages"></div>
+          <div class="chat-input-area">
+            <input type="text" id="chat-input" class="input-field" style="flex:1; margin:0;" placeholder="Ketik pesan..." onkeydown="if(event.key==='Enter') sendChatMessage();">
+            <button class="icon-btn" onclick="sendChatMessage()" style="margin-left:8px; background:var(--purple-600); color:white; border-radius:50%; width:40px; height:40px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom CTA -->
+    <div class="detail-bottom-cta" id="bottom-cta">
+      <button class="btn-primary detail-join-btn" id="btn-event-join" onclick="joinEvent()" style="background: linear-gradient(135deg, #16a34a, #22c55e); width:100%; justify-content:center; font-size:16px; padding:16px;">
+        🎉 Join Event
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script>
+    const API = 'http://' + window.location.hostname + ':3001';
+    let currentLobbyId = null;
+    let currentHostId = null;
+    let currentUserId = null;
+
+    function showToast(msg, type = 'info') {
+      const ct = document.getElementById('toast-container');
+      const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
+      const t = document.createElement('div');
+      t.className = `toast toast--${type}`;
+      t.innerHTML = `<span class="toast-icon">${icons[type]||'ℹ️'}</span><span class="toast-msg">${msg}</span>`;
+      ct.appendChild(t);
+      setTimeout(() => { t.classList.add('toast-exit'); setTimeout(() => t.remove(), 300); }, 4000);
+    }
+
+    function formatRp(n) { return 'Rp ' + (n||0).toLocaleString('id-ID'); }
+
+    function getLobbyIdFromUrl() {
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get('id')) return sp.get('id');
+      const m = window.location.href.match(/[?&]id=([a-f0-9-]+)/i);
+      return m ? m[1] : null;
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      currentLobbyId = getLobbyIdFromUrl();
+      if (currentLobbyId) {
+        initChat(currentLobbyId);
+        await loadLobbyDetails(currentLobbyId);
+      } else {
+        showToast('Lobby ID tidak ditemukan!', 'error');
+        setTimeout(() => window.location.href = 'index.html', 2000);
+      }
+    });
+
+    async function loadLobbyDetails(lobbyId) {
+      try {
+        const res = await fetch(`${API}/api/lobbies/${lobbyId}`, { credentials: 'include' });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Failed to load');
+        const lobby = json.data;
+        currentHostId = lobby.hostId;
+
+        // 1. Hero
+        document.getElementById('event-title').textContent = lobby.title;
+        if (lobby.metadata) {
+          const loc = document.getElementById('meta-location');
+          const dateEl = document.getElementById('meta-date');
+          if (lobby.metadata.location) loc.querySelector('span').textContent = lobby.metadata.location;
+          if (lobby.metadata.eventDate) {
+            const d = new Date(lobby.metadata.eventDate);
+            dateEl.querySelector('span').textContent = d.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+          }
+          if (lobby.metadata.description) {
+            document.getElementById('desc-section').style.display = '';
+            document.getElementById('event-description').textContent = lobby.metadata.description;
+          }
+        }
+
+        // 2. Cost
+        document.getElementById('cost-total').textContent = formatRp(lobby.totalPrice);
+        document.getElementById('cost-slots').textContent = `${lobby.currentSlots} / ${lobby.maxSlots} orang`;
+        document.getElementById('cost-per-person').textContent = formatRp(lobby.pricePerPerson);
+        document.getElementById('cost-admin').textContent = formatRp(lobby.memberFee);
+        document.getElementById('cost-total-pay').textContent = formatRp(lobby.totalToPay);
+
+        // 3. Slots
+        document.getElementById('slot-display').textContent = `${lobby.currentSlots} / ${lobby.maxSlots}`;
+        document.getElementById('slot-fill').style.width = `${Math.round((lobby.currentSlots / lobby.maxSlots) * 100)}%`;
+
+        // 4. Host Info & Reputation
+        const host = lobby.members.find(m => m.role === 'host');
+        if (host) {
+          document.getElementById('host-name').textContent = host.userName;
+          document.getElementById('host-avatar').src = host.userImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(host.userName)}&background=16a34a&color=fff`;
+          // Fetch reputation
+          try {
+            const repRes = await fetch(`${API}/api/users/${lobby.hostId}/reputation`);
+            const repData = await repRes.json();
+            if (repData.data) {
+              document.getElementById('host-likes').textContent = repData.data.likesCount;
+              document.getElementById('host-dislikes').textContent = repData.data.dislikesCount;
+            }
+          } catch {}
+        }
+
+        // 5. Members
+        const memberList = document.getElementById('member-list');
+        memberList.innerHTML = '';
+        lobby.members.forEach(m => {
+          memberList.innerHTML += `
+          <div class="member-row">
+            <div class="avatar-sm"><img src="${m.userImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.userName)}&background=16a34a&color=fff`}" alt=""/></div>
+            <div class="member-info"><strong>${m.userName}</strong><span>${m.role === 'host' ? 'Host · ' : ''}Joined</span></div>
+          </div>`;
+        });
+        for (let i = 0; i < lobby.maxSlots - lobby.currentSlots; i++) {
+          memberList.innerHTML += `
+          <div class="member-row member-row--empty">
+            <div class="avatar-sm empty">?</div>
+            <div class="member-info"><strong>Menunggu peserta...</strong></div>
+          </div>`;
+        }
+
+        // 6. Button State
+        const btn = document.getElementById('btn-event-join');
+        const sessionRes = await fetch(`${API}/api/auth/get-session`, { credentials: 'include' });
+        const sessionData = await sessionRes.json();
+        if (sessionData?.user) {
+          currentUserId = sessionData.user.id;
+          const isMember = lobby.members.find(m => m.userId === sessionData.user.id);
+          if (isMember) {
+            btn.dataset.joined = 'true';
+            btn.textContent = '✓ Sudah Bergabung!';
+            btn.classList.add('btn-joined');
+            document.getElementById('chat-section').style.display = '';
+            // Show rating buttons (if not host)
+            if (isMember.role !== 'host') {
+              document.getElementById('rating-section').style.display = '';
+            }
+          }
+          if (lobby.currentSlots >= lobby.maxSlots && !isMember) {
+            btn.textContent = 'Event Penuh';
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+          }
+        }
+
+      } catch (err) {
+        console.error(err);
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function joinEvent() {
+      const btn = document.getElementById('btn-event-join');
+      if (btn.dataset.joined === 'true') return;
+
+      try {
+        btn.disabled = true;
+        btn.textContent = 'Joining...';
+
+        const res = await fetch(`${API}/api/lobbies/${currentLobbyId}/join`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+        });
+
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Failed to join');
+
+        btn.dataset.joined = 'true';
+        btn.textContent = '✓ Sudah Bergabung!';
+        btn.classList.add('btn-joined');
+        showToast('🎉 Berhasil join! Group chat unlocked.', 'success');
+
+        await loadLobbyDetails(currentLobbyId);
+        document.getElementById('chat-section').style.display = '';
+        initChat(currentLobbyId);
+
+      } catch (err) {
+        console.error(err);
+        showToast(err.message, 'error');
+        btn.textContent = '🎉 Join Event';
+        btn.disabled = false;
+      }
+    }
+
+    async function rateHost(isLike) {
+      if (!currentHostId || !currentLobbyId) return;
+      try {
+        const res = await fetch(`${API}/api/users/${currentHostId}/rate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lobbyId: currentLobbyId, isLike }),
+          credentials: 'include',
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Rating gagal');
+
+        showToast(json.data.message, 'success');
+        document.getElementById('host-likes').textContent = json.data.likesCount;
+        document.getElementById('host-dislikes').textContent = json.data.dislikesCount;
+
+        // Update button states
+        document.getElementById('btn-like').classList.toggle('active', isLike);
+        document.getElementById('btn-dislike').classList.toggle('active', !isLike);
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+  </script>
+  <script src="chat.js"></script>
+</body>
+</html>

@@ -35,23 +35,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadCategoryCounts() {
   try {
-    const [rideRes, foodRes, subsRes] = await Promise.all([
+    const [rideRes, foodRes, subsRes, eventRes] = await Promise.all([
       fetch(`${API}/api/lobbies?category=ride&status=open`).then(r => r.json()),
       fetch(`${API}/api/lobbies?category=food&status=open`).then(r => r.json()),
       fetch(`${API}/api/lobbies?category=subs&status=open`).then(r => r.json()),
+      fetch(`${API}/api/lobbies?category=event&status=open`).then(r => r.json()),
     ]);
 
     const rideCount = rideRes.data?.length ?? 0;
     const foodCount = foodRes.data?.length ?? 0;
     const subsCount = subsRes.data?.length ?? 0;
+    const eventCount = eventRes.data?.length ?? 0;
 
     const rideEl = document.querySelector('#cat-ride .category-count');
     const foodEl = document.querySelector('#cat-food .category-count');
     const subsEl = document.querySelector('#cat-digital .category-count');
+    const eventEl = document.getElementById('count-event');
 
     if (rideEl) rideEl.textContent = `${rideCount} active`;
     if (foodEl) foodEl.textContent = `${foodCount} active`;
     if (subsEl) subsEl.textContent = `${subsCount} active`;
+    if (eventEl) eventEl.textContent = `${eventCount} active`;
   } catch {
     // Silently fail — keep defaults
   }

@@ -18,6 +18,14 @@
     .chat-bubble-name { font-size: 11px; color: var(--gray-500); margin-bottom: 2px; }
     .chat-bubble.me .chat-bubble-name { display: none; }
     .chat-input-area { display: flex; padding: 10px; background: white; border-top: 1px solid var(--gray-200); align-items: center; }
+    .rating-section { display: flex; gap: 12px; margin-top: 16px; }
+    .rate-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; border-radius: 12px; border: 2px solid var(--gray-200); background: white; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .rate-btn:hover { transform: scale(1.02); }
+    .rate-btn--like { color: #16a34a; }
+    .rate-btn--like:hover, .rate-btn--like.active { background: #dcfce7; border-color: #16a34a; }
+    .rate-btn--dislike { color: #dc2626; }
+    .rate-btn--dislike:hover, .rate-btn--dislike.active { background: #fef2f2; border-color: #dc2626; }
+    .host-reputation { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--gray-500); margin-top: 2px; }
   </style>
 </head>
 <body>
@@ -169,6 +177,18 @@
         </div>
       </section>
 
+      <!-- Rate Host -->
+      <section class="section" id="rate-host-section" style="display:none; margin-top:4px;">
+        <h2 class="section-title" style="font-size:15px; margin-bottom:8px;">⭐ Rate Host</h2>
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+          <span style="font-size:13px; color:var(--gray-500);">👍 <span id="host-likes">0</span> · 👎 <span id="host-dislikes">0</span></span>
+        </div>
+        <div class="rating-section">
+          <button class="rate-btn rate-btn--like" id="btn-like" onclick="rateHost(true)">👍 Like</button>
+          <button class="rate-btn rate-btn--dislike" id="btn-dislike" onclick="rateHost(false)">👎 Dislike</button>
+        </div>
+      </section>
+
     </main>
 
     <!-- Floating CTA -->
@@ -190,6 +210,7 @@
   <script>
     const API = 'http://' + window.location.hostname + ':3001';
     let currentLobbyId = null;
+    let currentHostId = null;
 
     function showToast(msg, type = 'info') {
       const ct = document.getElementById('toast-container');
@@ -281,6 +302,7 @@
             const btn = document.getElementById('btn-ride-join');
             const sessionRes = await fetch(`${API}/api/auth/get-session`, { credentials: 'include' });
             const sessionData = await sessionRes.json();
+            currentHostId = lobby.hostId;
             if(sessionData?.user) {
                 const isMember = lobby.members.find(m => m.userId === sessionData.user.id);
                 if(isMember) {
@@ -288,6 +310,18 @@
                     btn.textContent = '✓ Seat Reserved!';
                     btn.classList.add('btn-joined');
                     document.getElementById('chat-section').style.display = '';
+                    if(isMember.role !== 'host') {
+                      document.getElementById('rate-host-section').style.display = '';
+                      // Load host reputation
+                      try {
+                        const repRes = await fetch(`${API}/api/users/${lobby.hostId}/reputation`);
+                        const repData = await repRes.json();
+                        if (repData.data) {
+                          document.getElementById('host-likes').textContent = repData.data.likesCount;
+                          document.getElementById('host-dislikes').textContent = repData.data.dislikesCount;
+                        }
+                      } catch {}
+                    }
                 } else if (lobby.currentSlots >= lobby.maxSlots) {
                     btn.disabled = true;
                     btn.textContent = 'Room is Full';
@@ -371,6 +405,27 @@
         showToast(err.message, 'error');
         btn.textContent = 'Join & Pay Admin Fee';
         btn.disabled = false;
+      }
+    }
+
+    async function rateHost(isLike) {
+      if (!currentHostId || !currentLobbyId) return;
+      try {
+        const res = await fetch(`${API}/api/users/${currentHostId}/rate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lobbyId: currentLobbyId, isLike }),
+          credentials: 'include',
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Rating gagal');
+        showToast(json.data.message, 'success');
+        document.getElementById('host-likes').textContent = json.data.likesCount;
+        document.getElementById('host-dislikes').textContent = json.data.dislikesCount;
+        document.getElementById('btn-like').classList.toggle('active', isLike);
+        document.getElementById('btn-dislike').classList.toggle('active', !isLike);
+      } catch (err) {
+        showToast(err.message, 'error');
       }
     }
   </script>

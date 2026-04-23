@@ -46,6 +46,10 @@
               <input type="radio" name="category" value="subs">
               <span class="radio-content">🎬<br>Subs</span>
             </label>
+            <label class="radio-card">
+              <input type="radio" name="category" value="event">
+              <span class="radio-content">🎉<br>Event</span>
+            </label>
           </div>
         </div>
 
@@ -75,7 +79,7 @@
           </div>
           <div class="info-alert" style="background:#f3e8ff; border-color:#d8b4fe; color:#6411a3;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-            <p>Admin fee: <strong>Rp 2.000</strong> (host). Harga ride dibagi rata ke semua penumpang via chat.</p>
+            <p>Admin fee: <strong>Rp 1.000</strong> (host), <strong>Rp 200</strong> (joiner). Harga ride dibagi rata ke semua penumpang via chat.</p>
           </div>
         </div>
 
@@ -135,7 +139,7 @@
           </div>
           <div class="info-alert" style="background:#fef3c7; border-color:#fde68a; color:#92400e;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-            <p>Admin fee: <strong>Rp 2.000</strong> (host), <strong>Rp 200</strong> (joiner). Harga makanan dikoordinasi via chat.</p>
+            <p>Admin fee: <strong>Rp 1.000</strong> (host), <strong>Rp 200</strong> (joiner). Harga makanan dikoordinasi via chat.</p>
           </div>
         </div>
 
@@ -166,7 +170,41 @@
           </div>
           <div class="info-alert" style="background:#dbeafe; border-color:#93c5fd; color:#1e3a8a;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-            <p>Admin fee: <strong>Rp 5.000</strong> (host), <strong>Rp 200</strong> (joiner). Setelah join, share ID/password via <strong>in-app group chat</strong>. Chat otomatis dihapus setelah 1 bulan.</p>
+            <p>Admin fee: <strong>Rp 2.000</strong> (host), <strong>Rp 200</strong> (joiner). Setelah join, share ID/password via <strong>in-app group chat</strong>. Chat otomatis dihapus setelah 1 bulan.</p>
+          </div>
+        </div>
+
+        <!-- ═══ EVENT FIELDS ═══ -->
+        <div id="fields-event" class="dynamic-fields" style="display:none;">
+          <div class="form-group">
+            <label class="form-label">🎉 Nama Acara / Event</label>
+            <input type="text" id="event-name" class="input-field" placeholder="e.g. Futsal Bareng, Sewa Villa, Patungan Kado">
+          </div>
+          <div class="form-group">
+            <label class="form-label">📍 Lokasi</label>
+            <input type="text" id="event-location" class="input-field" placeholder="e.g. Lapangan Futsal Senayan, Villa Puncak">
+          </div>
+          <div class="form-group">
+            <label class="form-label">📅 Tanggal Event</label>
+            <input type="date" id="event-date" class="input-field">
+          </div>
+          <div class="form-group">
+            <label class="form-label">📝 Deskripsi (opsional)</label>
+            <textarea id="event-desc" class="input-field" rows="3" placeholder="Jelaskan detail acara, aturan, dsb."></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group" style="flex:1;">
+              <label class="form-label">Kapasitas (Max 50)</label>
+              <input type="number" id="event-slots" class="input-field" placeholder="e.g. 20" min="2" max="50" value="10">
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label class="form-label">Total Biaya</label>
+              <input type="number" id="event-price" class="input-field" placeholder="Rp" value="500000">
+            </div>
+          </div>
+          <div class="info-alert" style="background:#dcfce7; border-color:#86efac; color:#166534;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <p>Admin fee: <strong>Rp 1.000</strong> (host), <strong>Rp 200</strong> (joiner). Biaya akan dibagi rata ke semua peserta. Chat grup aktif 7 hari setelah event.</p>
           </div>
         </div>
 
@@ -224,6 +262,7 @@
       ride: document.getElementById('fields-ride'),
       food: document.getElementById('fields-food'),
       subs: document.getElementById('fields-subs'),
+      event: document.getElementById('fields-event'),
     };
 
     radios.forEach(radio => {
@@ -293,6 +332,17 @@
             serviceName: document.getElementById('subs-service').value || 'Digital Subs',
             duration: document.getElementById('subs-duration').value,
           };
+        } else if (category === 'event') {
+          const eventName = document.getElementById('event-name').value || 'Event';
+          payload.title = eventName;
+          payload.maxSlots = parseInt(document.getElementById('event-slots').value) || 10;
+          payload.totalPrice = parseInt(document.getElementById('event-price').value) || 500000;
+          payload.metadata = {
+            eventName: eventName,
+            location: document.getElementById('event-location').value || '',
+            eventDate: document.getElementById('event-date').value || '',
+            description: document.getElementById('event-desc').value || '',
+          };
         }
 
         const res = await fetch(`${API}/api/lobbies`, {
@@ -309,7 +359,7 @@
         showToast('🎉 Lobby berhasil dibuat!', 'success');
 
         // Redirect to detail page with the new lobby ID
-        const detailPages = { ride: 'ride-detail', food: 'food-detail', subs: 'subs-detail' };
+        const detailPages = { ride: 'ride-detail', food: 'food-detail', subs: 'subs-detail', event: 'event-detail' };
         const detailPage = detailPages[category] || 'index.html';
         setTimeout(() => {
           window.location.href = `${detailPage}?id=${data.data.id}`;

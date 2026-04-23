@@ -103,9 +103,10 @@
         const badges = {
           ride: { icon: '🚗', bg: '#ede9fe', color: 'var(--purple-600)' },
           food: { icon: '🍔', bg: '#fef3c7', color: '#d97706' },
-          subs: { icon: '🎬', bg: '#dbeafe', color: '#2563eb' }
+          subs: { icon: '🎬', bg: '#dbeafe', color: '#2563eb' },
+          event: { icon: '🎉', bg: '#dcfce7', color: '#16a34a' }
         };
-        const detailPages = { ride: 'ride-detail', food: 'food-detail', subs: 'subs-detail' };
+        const detailPages = { ride: 'ride-detail', food: 'food-detail', subs: 'subs-detail', event: 'event-detail' };
 
         lobbies.forEach(lobby => {
           const badge = badges[lobby.category] || badges.ride;
@@ -119,6 +120,7 @@
             if (lobby.category === 'ride' && lobby.metadata.departureTime) metaText = `Departs ${lobby.metadata.departureTime}`;
             if (lobby.category === 'food') metaText = 'Order running';
             if (lobby.category === 'subs' && lobby.metadata.duration) metaText = `Duration: ${lobby.metadata.duration}`;
+            if (lobby.category === 'event' && lobby.metadata.location) metaText = lobby.metadata.location;
           }
 
           container.innerHTML += `

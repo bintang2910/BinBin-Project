@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentCategory === 'ride') title = '🚗 Ride Sharing';
     if (currentCategory === 'food') title = '🍔 Food Order';
     if (currentCategory === 'subs') title = '🎬 Digital Subs';
+    if (currentCategory === 'event') title = '🎉 Event / Bebas';
     
     document.getElementById('category-title').textContent = title;
 
@@ -93,6 +94,7 @@ function createLobbyCard(lobby) {
     ride: { icon: '🚗', label: 'Ride', css: 'ride' },
     food: { icon: '🍔', label: 'Food', css: 'food' },
     subs: { icon: '🎬', label: 'Digital', css: 'digital' },
+    event: { icon: '🎉', label: 'Event', css: 'event' },
   };
   const badge = badges[lobby.category] || badges.ride;
 
@@ -100,8 +102,9 @@ function createLobbyCard(lobby) {
     ride: 'ride-detail',
     food: 'food-detail',
     subs: 'subs-detail',
+    event: 'event-detail',
   };
-  const detailHref = `${detailPages[lobby.category]}?id=${lobby.id}`;
+  const detailHref = `${detailPages[lobby.category] || 'ride-detail'}?id=${lobby.id}`;
 
   const progress = Math.round((lobby.currentSlots / lobby.maxSlots) * 100);
   const price = formatRupiah(lobby.pricePerPerson);
@@ -115,6 +118,8 @@ function createLobbyCard(lobby) {
     metaText = meta.restaurantName;
   } else if (lobby.category === 'subs' && meta?.serviceName) {
     metaText = `${meta.serviceName} · ${meta.duration || ''}`;
+  } else if (lobby.category === 'event' && meta?.eventName) {
+    metaText = `${meta.location || 'TBD'} · ${meta.eventDate || ''}`;
   }
 
   card.innerHTML = `

@@ -26,8 +26,8 @@ const uuidParam = z.string().uuid("Invalid lobby ID format.");
 const createLobbySchema = z
   .object({
     title: z.string().min(3, "Title min 3 chars").max(100),
-    category: z.enum(["ride", "food", "subs"]),
-    maxSlots: z.number().int().min(2).max(20),
+    category: z.enum(["ride", "food", "subs", "event"]),
+    maxSlots: z.number().int().min(2).max(50),
     totalPrice: z.number().int().min(1000),
     deadline: z.string().datetime().optional(),
     expiryDate: z.string().datetime().optional(),
@@ -47,7 +47,7 @@ const createLobbySchema = z
   );
 
 const listQuerySchema = z.object({
-  category: z.enum(["ride", "food", "subs"]).optional(),
+  category: z.enum(["ride", "food", "subs", "event"]).optional(),
   status: z.string().optional(),
   q: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(50).optional(),

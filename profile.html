@@ -54,6 +54,23 @@
               <span>Saved</span>
             </div>
           </div>
+          <!-- Host Reputation -->
+          <div class="profile-stats" style="margin-top:12px; background:linear-gradient(135deg,#dcfce7,#bbf7d0); border:1px solid #86efac;">
+            <div class="profile-stat">
+              <strong id="stat-likes">0</strong>
+              <span>👍 Likes</span>
+            </div>
+            <div class="profile-stat__divider"></div>
+            <div class="profile-stat">
+              <strong id="stat-dislikes">0</strong>
+              <span>👎 Dislikes</span>
+            </div>
+            <div class="profile-stat__divider"></div>
+            <div class="profile-stat">
+              <strong id="stat-approval">—</strong>
+              <span>⭐ Approval</span>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -192,6 +209,17 @@
           const encodedName = encodeURIComponent(user.name || 'U');
           avatarImg.src = user.image || `https://ui-avatars.com/api/?name=${encodedName}&background=7c3aed&color=fff&size=96&bold=true`;
           avatarImg.alt = user.name || 'User';
+
+          // Load reputation
+          try {
+            const repRes = await fetch(`${API}/api/users/${user.id}/reputation`);
+            const repData = await repRes.json();
+            if (repData.data) {
+              document.getElementById('stat-likes').textContent = repData.data.likesCount;
+              document.getElementById('stat-dislikes').textContent = repData.data.dislikesCount;
+              document.getElementById('stat-approval').textContent = repData.data.totalRatings > 0 ? repData.data.approvalScore + '%' : 'N/A';
+            }
+          } catch {}
         }
       } catch {
         // Network error → redirect to login

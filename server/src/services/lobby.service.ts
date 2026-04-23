@@ -18,7 +18,7 @@ import type { LobbyMetadata } from "../db/schema.js";
    - Chat lifecycle management
    ═══════════════════════════════════════════════════ */
 
-type Category = "ride" | "food" | "subs";
+type Category = "ride" | "food" | "subs" | "event";
 
 interface CreateLobbyInput {
   hostId: string;
@@ -43,9 +43,10 @@ interface ListLobbiesInput {
 
 // ─── Dynamic Fee Lookup (Category-specific) ───
 const DEFAULT_FEES: Record<string, number> = {
-  host_fee_ride: 2000,
-  host_fee_food: 2000,
-  host_fee_subs: 5000,
+  host_fee_ride: 1000,
+  host_fee_food: 1000,
+  host_fee_subs: 2000,
+  host_fee_event: 1000,
   member_fee: 200,
 };
 
@@ -83,8 +84,8 @@ export async function createLobby(input: CreateLobbyInput) {
   if (!title || title.length < 3) {
     throw new ServiceError("Title must be at least 3 characters.", 400);
   }
-  if (input.maxSlots < 2 || input.maxSlots > 20) {
-    throw new ServiceError("Max slots must be between 2 and 20.", 400);
+  if (input.maxSlots < 2 || input.maxSlots > 50) {
+    throw new ServiceError("Max slots must be between 2 and 50.", 400);
   }
   if (input.totalPrice < 1000) {
     throw new ServiceError("Total price must be at least Rp 1.000.", 400);
@@ -100,6 +101,9 @@ export async function createLobby(input: CreateLobbyInput) {
   if (input.category === "subs") {
     chatExpiresAt = new Date();
     chatExpiresAt.setDate(chatExpiresAt.getDate() + 30); // Subs: 30 days
+  } else if (input.category === "event") {
+    chatExpiresAt = new Date();
+    chatExpiresAt.setDate(chatExpiresAt.getDate() + 7); // Event: 7 days after event
   }
   // ride/food: chatExpiresAt stays null — deleted on completion
 
@@ -473,9 +477,10 @@ export async function getPlatformFees() {
   for (const f of fees) {
     result[f.key] = f.value;
   }
-  if (!result["host_fee_ride"]) result["host_fee_ride"] = { amount: 2000, currency: "IDR" };
-  if (!result["host_fee_food"]) result["host_fee_food"] = { amount: 2000, currency: "IDR" };
-  if (!result["host_fee_subs"]) result["host_fee_subs"] = { amount: 5000, currency: "IDR" };
+  if (!result["host_fee_ride"]) result["host_fee_ride"] = { amount: 1000, currency: "IDR" };
+  if (!result["host_fee_food"]) result["host_fee_food"] = { amount: 1000, currency: "IDR" };
+  if (!result["host_fee_subs"]) result["host_fee_subs"] = { amount: 2000, currency: "IDR" };
+  if (!result["host_fee_event"]) result["host_fee_event"] = { amount: 1000, currency: "IDR" };
   if (!result["member_fee"]) result["member_fee"] = { amount: 200, currency: "IDR" };
   return result;
 }

@@ -75,7 +75,7 @@ export const verification = pgTable("verification", {
    BinBin Enums
    ═══════════════════════════════════════════════════ */
 
-export const categoryEnum = pgEnum("category", ["ride", "food", "subs"]);
+export const categoryEnum = pgEnum("category", ["ride", "food", "subs", "event"]);
 
 export const lobbyStatusEnum = pgEnum("lobby_status", [
   "open",       // masih bisa join
@@ -226,6 +226,31 @@ export const platformEarnings = pgTable("platform_earnings", {
 });
 
 /* ═══════════════════════════════════════════════════
+   Host Ratings (Like/Dislike per lobby)
+   ═══════════════════════════════════════════════════ */
+
+export const hostRatings = pgTable(
+  "host_ratings",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    hostId: text("host_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    raterId: text("rater_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    lobbyId: uuid("lobby_id")
+      .notNull()
+      .references(() => lobbies.id, { onDelete: "cascade" }),
+    isLike: boolean("is_like").notNull(), // true = 👍, false = 👎
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("uq_host_rater_lobby").on(table.hostId, table.raterId, table.lobbyId),
+  ]
+);
+
+/* ═══════════════════════════════════════════════════
    Transactions (Payment Gateway — future Midtrans)
    ═══════════════════════════════════════════════════ */
 
@@ -340,7 +365,14 @@ export type SubsMetadata = {
   accountRules?: string[];
 };
 
-export type LobbyMetadata = RideMetadata | FoodMetadata | SubsMetadata;
+export type EventMetadata = {
+  eventName: string;
+  location: string;
+  eventDate: string;
+  description?: string;
+};
+
+export type LobbyMetadata = RideMetadata | FoodMetadata | SubsMetadata | EventMetadata;
 
 // Inferred types
 export type User = typeof user.$inferSelect;
