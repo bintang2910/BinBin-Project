@@ -13,7 +13,8 @@ export function initSocket(httpServer: any) {
           origin.includes("localhost") ||
           origin.includes("127.0.0.1") ||
           /^https?:\/\/192\.168\./.test(origin) ||
-          /^https?:\/\/10\./.test(origin)
+          /^https?:\/\/10\./.test(origin) ||
+          origin.includes(".onrender.com")
         ) {
           return callback(null, true);
         }

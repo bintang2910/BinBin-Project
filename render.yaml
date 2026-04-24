@@ -1,0 +1,19 @@
+# Render Blueprint — BinBin App
+# This tells Render how to build and run the app
+services:
+  - type: web
+    name: binbin-app
+    runtime: node
+    region: singapore  # closest to Indonesia
+    plan: free
+    buildCommand: cd server && npm install && npm run build
+    startCommand: cd server && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false  # Set manually in Render dashboard
+      - key: BETTER_AUTH_SECRET
+        sync: false  # Set manually in Render dashboard
+      - key: BETTER_AUTH_URL
+        sync: false  # Will be set to the Render URL

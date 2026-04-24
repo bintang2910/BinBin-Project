@@ -1,11 +1,16 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./lib/auth.js";
 import apiRoutes from "./routes/index.js";
 import { createServer } from "http";
 import { initSocket } from "./socket.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /* ═══════════════════════════════════════════════════
    BinBin API Server
@@ -26,7 +31,9 @@ app.use(
         origin.includes("127.0.0.1") ||
         origin.match(/^https?:\/\/192\.168\./) ||
         origin.match(/^https?:\/\/10\./) ||
-        origin.match(/^https?:\/\/172\.(1[6-9]|2\d|3[01])\./)
+        origin.match(/^https?:\/\/172\.(1[6-9]|2\d|3[01])\./) ||
+        origin.includes(".onrender.com") ||
+        origin.includes(".vercel.app")
       ) {
         return callback(null, true);
       }
@@ -58,11 +65,26 @@ app.all("/api/auth/*splat", toNodeHandler(auth));
 // ─── API Routes ───
 app.use("/api", apiRoutes);
 
-// ─── 404 Fallback ───
-app.use((_req, res) => {
-  res.status(404).json({
-    error: "Not Found",
-    message: "The requested endpoint does not exist.",
+// ─── Serve Frontend Static Files (Production) ───
+// In production, Express serves the frontend from the parent directory
+const frontendPath = path.join(__dirname, "../../");
+app.use(express.static(frontendPath));
+
+// ─── SPA Fallback: serve index.html for non-API routes ───
+app.get("*", (req, res) => {
+  // Don't serve index.html for API routes
+  if (req.path.startsWith("/api/")) {
+    return res.status(404).json({
+      error: "Not Found",
+      message: "The requested endpoint does not exist.",
+    });
+  }
+  // Try to serve the exact file, or fallback to index.html
+  const filePath = path.join(frontendPath, req.path);
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      res.sendFile(path.join(frontendPath, "index.html"));
+    }
   });
 });
 

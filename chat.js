@@ -6,7 +6,8 @@ let socket = null;
 let chatUserId = null;
 let chatLobbyId = null;
 
-const CHAT_API = 'http://' + window.location.hostname + ':3001';
+// CHAT_API uses the global API constant from api-config.js
+const CHAT_API = (typeof API !== 'undefined') ? API : ('http://' + window.location.hostname + ':3001');
 
 async function initChat(lobbyId) {
     chatLobbyId = lobbyId;

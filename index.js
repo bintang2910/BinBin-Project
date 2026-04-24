@@ -2,7 +2,7 @@
    BinBin — Dashboard (Live Database) v3
    ─────────────────────────────────────────────── */
 
-const API = "http://" + window.location.hostname + ":3001";
+// API constant comes from api-config.js (loaded before this script)
 
 document.addEventListener('DOMContentLoaded', () => {
 

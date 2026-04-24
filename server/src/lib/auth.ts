@@ -6,13 +6,37 @@ if (!process.env.BETTER_AUTH_SECRET) {
   throw new Error("BETTER_AUTH_SECRET environment variable is required");
 }
 
+const isProduction = process.env.NODE_ENV === "production";
+const renderUrl = process.env.RENDER_EXTERNAL_URL; // e.g. https://binbin-app.onrender.com
+
+// Build trusted origins dynamically
+const trustedOrigins: string[] = [
+  "http://localhost:8080",
+  "http://localhost:3001",
+  "http://127.0.0.1:8080",
+];
+
+// Add local network IPs for dev
+if (!isProduction) {
+  trustedOrigins.push(
+    "http://192.168.110.111:8080",
+    "http://192.168.110.111:52998",
+    "http://192.168.110.111:3001"
+  );
+}
+
+// Add Render URL for production
+if (renderUrl) {
+  trustedOrigins.push(renderUrl);
+}
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
   }),
 
   // Base URL for auth endpoints
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3001",
+  baseURL: process.env.BETTER_AUTH_URL || renderUrl || "http://localhost:3001",
 
   // Auth secret for signing tokens
   secret: process.env.BETTER_AUTH_SECRET,
@@ -33,24 +57,16 @@ export const auth = betterAuth({
     },
   },
 
-  // Trusted origins — allow all local network IPs
-  trustedOrigins: [
-    "http://localhost:8080",
-    "http://localhost:3001",
-    "http://127.0.0.1:8080",
-    "http://192.168.110.111:8080",
-    "http://192.168.110.111:52998",
-    "http://192.168.110.111:3001",
-  ],
+  trustedOrigins,
 
-  // Advanced: allow any origin dynamically
+  // Advanced cookie settings
   advanced: {
     crossSubDomainCookies: {
       enabled: false,
     },
     defaultCookieAttributes: {
-      sameSite: "lax",
-      secure: false,    // Not using HTTPS in dev
+      sameSite: isProduction ? "none" : "lax",
+      secure: isProduction,    // HTTPS in production
       path: "/",
     },
   },

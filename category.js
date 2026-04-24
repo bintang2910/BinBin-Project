@@ -2,7 +2,7 @@
    Category Focused View
    ─────────────────────────────────────────────── */
 
-const API = "http://" + window.location.hostname + ":3001";
+// API constant comes from api-config.js (loaded before this script)
 let currentCategory = 'ride';
 
 document.addEventListener('DOMContentLoaded', () => {

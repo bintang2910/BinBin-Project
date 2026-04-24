@@ -141,9 +141,9 @@
   <!-- Toast Container -->
   <div class="toast-container" id="toast-container"></div>
 
+  <script src="api-config.js"></script>
   <script src="index.js"></script>
   <script>
-    const API_HOME = 'http://' + window.location.hostname + ':3001';
 
     document.addEventListener('DOMContentLoaded', async () => {
       const container = document.getElementById('home-live-lobbies');
@@ -151,7 +151,7 @@
       if(!container) return;
 
       try {
-        const res = await fetch(`${API_HOME}/api/lobbies?status=open&limit=10`, { credentials: 'include' });
+        const res = await fetch(`${API}/api/lobbies?status=open&limit=10`, { credentials: 'include' });
         const json = await res.json();
         
         if (!res.ok) throw new Error(json.error || 'Failed to fetch');
