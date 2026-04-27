@@ -201,7 +201,11 @@ router.get("/:id/chat", requireAuth, async (req, res) => {
 
 function handleError(res: any, error: unknown) {
   if (error instanceof ServiceError) {
-    res.status(error.statusCode).json({ error: error.message, code: error.statusCode });
+    res.status(error.statusCode).json({
+      error: error.message,
+      code: error.statusCode,
+      ...(error.errorCode && { errorCode: error.errorCode }),
+    });
     return;
   }
   if (error instanceof z.ZodError) {

@@ -96,6 +96,28 @@ export async function createLobby(input: CreateLobbyInput) {
   const memberFee = await getMemberFee();
   const pricePerPerson = input.totalPrice; // Initially host pays full price (1 member = host)
 
+  // ─── Check Host Balance ───
+  const [hostUser] = await db
+    .select({ balance: user.balance })
+    .from(user)
+    .where(eq(user.id, input.hostId))
+    .limit(1);
+
+  if (!hostUser) throw new ServiceError("User not found.", 404);
+  if (hostUser.balance < hostFee) {
+    throw new ServiceError(
+      `Saldo tidak cukup! Butuh Rp ${hostFee.toLocaleString("id-ID")} untuk biaya host. Saldo kamu: Rp ${hostUser.balance.toLocaleString("id-ID")}. Silakan top up dulu.`,
+      402,
+      "INSUFFICIENT_BALANCE"
+    );
+  }
+
+  // ─── Deduct Host Fee from Balance ───
+  await db
+    .update(user)
+    .set({ balance: sql`${user.balance} - ${hostFee}` })
+    .where(eq(user.id, input.hostId));
+
   // Calculate chat expiry
   let chatExpiresAt: Date | null = null;
   if (input.category === "subs") {
@@ -293,6 +315,29 @@ export async function joinLobby(lobbyId: string, userId: string) {
   if (existing) throw new ServiceError("You have already joined this lobby.", 409);
   if (lobby.currentSlots >= lobby.maxSlots)
     throw new ServiceError("This lobby is full.", 400);
+
+  // ─── Check Member Balance ───
+  const totalCost = lobby.memberFee; // Admin fee to join
+  const [memberUser] = await db
+    .select({ balance: user.balance })
+    .from(user)
+    .where(eq(user.id, userId))
+    .limit(1);
+
+  if (!memberUser) throw new ServiceError("User not found.", 404);
+  if (memberUser.balance < totalCost) {
+    throw new ServiceError(
+      `Saldo tidak cukup! Butuh Rp ${totalCost.toLocaleString("id-ID")} untuk biaya admin. Saldo kamu: Rp ${memberUser.balance.toLocaleString("id-ID")}. Silakan top up dulu ya!`,
+      402,
+      "INSUFFICIENT_BALANCE"
+    );
+  }
+
+  // ─── Deduct Member Fee from Balance ───
+  await db
+    .update(user)
+    .set({ balance: sql`${user.balance} - ${totalCost}` })
+    .where(eq(user.id, userId));
 
   // Insert member with escrow payment status
   await db.insert(lobbyMembers).values({
@@ -522,9 +567,11 @@ export async function getPlatformFees() {
 
 export class ServiceError extends Error {
   public statusCode: number;
-  constructor(message: string, statusCode = 400) {
+  public errorCode?: string;
+  constructor(message: string, statusCode = 400, errorCode?: string) {
     super(message);
     this.name = "ServiceError";
     this.statusCode = statusCode;
+    this.errorCode = errorCode;
   }
 }

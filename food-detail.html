@@ -250,7 +250,16 @@
           credentials: 'include'
         });
         const json = await res.json();
-        if (!res.ok) throw new Error(json.error || 'Failed to join');
+        if (!res.ok) {
+          if (json.errorCode === 'INSUFFICIENT_BALANCE') {
+            showToast('💰 ' + json.error, 'error');
+            setTimeout(() => { if(confirm('Saldo tidak cukup. Mau top up sekarang?')) window.location.href = 'wallet.html'; }, 500);
+            btn.textContent = 'Join & Pay Admin Fee';
+            btn.disabled = false;
+            return;
+          }
+          throw new Error(json.error || 'Failed to join');
+        }
 
         btn.dataset.joined = 'true';
         btn.textContent = '✓ Joined Order!';

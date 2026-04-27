@@ -354,7 +354,14 @@
 
         const data = await res.json();
         
-        if (!res.ok) throw new Error(data.error || 'Failed to create lobby');
+        if (!res.ok) {
+          if (data.errorCode === 'INSUFFICIENT_BALANCE') {
+            showToast('💰 ' + data.error, 'error');
+            setTimeout(() => { if(confirm('Saldo tidak cukup untuk biaya host. Mau top up sekarang?')) window.location.href = 'wallet.html'; }, 500);
+            return;
+          }
+          throw new Error(data.error || 'Failed to create lobby');
+        }
 
         showToast('🎉 Lobby berhasil dibuat!', 'success');
 
