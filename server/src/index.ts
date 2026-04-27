@@ -101,6 +101,9 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
 const httpServer = createServer(app);
 initSocket(httpServer);
 
+// ─── Auto-Expire Lobbies (runs every 5 minutes) ───
+import { expireOldLobbies } from "./services/lobby.service.js";
+
 httpServer.listen(PORT, "0.0.0.0", () => {
   console.log(`
   ╔══════════════════════════════════════════╗
@@ -111,8 +114,13 @@ httpServer.listen(PORT, "0.0.0.0", () => {
   ║  📦 API:  /api/lobbies, /api/payments    ║
   ║  💰 Wallet: /api/wallet                  ║
   ║  💚 Health: /api/health                  ║
+  ║  ⏰ Auto-Expire: every 5 minutes         ║
   ╚══════════════════════════════════════════╝
   `);
+
+  // Run once on startup, then every 5 minutes
+  expireOldLobbies();
+  setInterval(expireOldLobbies, 5 * 60 * 1000);
 });
 
 export default app;

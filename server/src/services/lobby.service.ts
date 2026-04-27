@@ -7,7 +7,7 @@ import {
   user,
   lobbyMessages,
 } from "../db/schema.js";
-import { eq, and, desc, ilike, ne } from "drizzle-orm";
+import { eq, and, desc, ilike, ne, lt, sql, or, inArray } from "drizzle-orm";
 import type { LobbyMetadata } from "../db/schema.js";
 
 /* ═══════════════════════════════════════════════════
@@ -152,6 +152,35 @@ export async function createLobby(input: CreateLobbyInput) {
   return lobby;
 }
 
+// ─── Auto-Expire Old Lobbies ───
+// Called periodically to mark lobbies as expired when deadline has passed
+
+export async function expireOldLobbies() {
+  const now = new Date();
+  try {
+    const result = await db
+      .update(lobbies)
+      .set({ status: "expired", updatedAt: now })
+      .where(
+        and(
+          // Only open or full lobbies can be expired
+          or(eq(lobbies.status, "open"), eq(lobbies.status, "full")),
+          // Has a deadline and it has passed
+          lt(lobbies.deadline, now)
+        )
+      )
+      .returning({ id: lobbies.id, title: lobbies.title });
+
+    if (result.length > 0) {
+      console.log(`[Auto-Expire] ⏰ Expired ${result.length} lobbies:`, result.map(l => l.title).join(", "));
+    }
+    return result;
+  } catch (err) {
+    console.error("[Auto-Expire] Error:", err);
+    return [];
+  }
+}
+
 // ─── List Lobbies (Public) ───
 export async function listLobbies(input: ListLobbiesInput) {
   const limit = Math.min(input.limit ?? 20, 50);
@@ -168,8 +197,10 @@ export async function listLobbies(input: ListLobbiesInput) {
   if (input.query) {
     conditions.push(ilike(lobbies.title, `%${input.query}%`));
   }
+  // Default: hide cancelled AND expired lobbies from public view
   if (!input.status) {
     conditions.push(ne(lobbies.status, "cancelled"));
+    conditions.push(ne(lobbies.status, "expired"));
   }
 
   const results = await db
