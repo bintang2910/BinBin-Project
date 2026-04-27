@@ -7,7 +7,11 @@ if (!process.env.BETTER_AUTH_SECRET) {
 }
 
 const isProduction = process.env.NODE_ENV === "production";
-const renderUrl = process.env.RENDER_EXTERNAL_URL; // e.g. https://binbin-app.onrender.com
+
+// Detect production URL from various hosting platforms
+const productionUrl = process.env.BETTER_AUTH_URL
+  || process.env.RENDER_EXTERNAL_URL
+  || (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : null);
 
 // Build trusted origins dynamically
 const trustedOrigins: string[] = [
@@ -25,9 +29,9 @@ if (!isProduction) {
   );
 }
 
-// Add Render URL for production
-if (renderUrl) {
-  trustedOrigins.push(renderUrl);
+// Add production URL
+if (productionUrl) {
+  trustedOrigins.push(productionUrl);
 }
 
 export const auth = betterAuth({
@@ -36,7 +40,7 @@ export const auth = betterAuth({
   }),
 
   // Base URL for auth endpoints
-  baseURL: process.env.BETTER_AUTH_URL || renderUrl || "http://localhost:3001",
+  baseURL: productionUrl || "http://localhost:3001",
 
   // Auth secret for signing tokens
   secret: process.env.BETTER_AUTH_SECRET,
@@ -65,8 +69,8 @@ export const auth = betterAuth({
       enabled: false,
     },
     defaultCookieAttributes: {
-      sameSite: isProduction ? "none" : "lax",
-      secure: isProduction,    // HTTPS in production
+      sameSite: "lax",   // Same-origin: frontend served by same Express server
+      secure: isProduction,
       path: "/",
     },
   },
