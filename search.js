@@ -184,12 +184,12 @@ function createLobbyCard(lobby) {
   const badge = badges[lobby.category] || badges.ride;
 
   const detailPages = {
-    ride: 'ride-detail',
-    food: 'food-detail',
-    subs: 'subs-detail',
-    event: 'event-detail',
+    ride: 'ride-detail.html',
+    food: 'food-detail.html',
+    subs: 'subs-detail.html',
+    event: 'event-detail.html',
   };
-  const detailHref = `${detailPages[lobby.category] || 'ride-detail'}?id=${lobby.id}`;
+  const detailHref = `${detailPages[lobby.category] || 'ride-detail.html'}?id=${lobby.id}`;
 
   const progress = Math.round((lobby.currentSlots / lobby.maxSlots) * 100);
   const dynamicPrice = Math.ceil(lobby.totalPrice / lobby.currentSlots);

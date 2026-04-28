@@ -168,17 +168,20 @@
         const rideLobby = allLobbies.find(l => l.category === 'ride');
         const foodLobby = allLobbies.find(l => l.category === 'food');
         const subsLobby = allLobbies.find(l => l.category === 'subs');
+        const eventLobby = allLobbies.find(l => l.category === 'event');
 
         const lobbies = [];
         if (rideLobby) lobbies.push(rideLobby);
         if (foodLobby) lobbies.push(foodLobby);
         if (subsLobby) lobbies.push(subsLobby);
+        if (eventLobby) lobbies.push(eventLobby);
 
-        const detailPages = { ride: 'ride-detail', food: 'food-detail', subs: 'subs-detail' };
+        const detailPages = { ride: 'ride-detail.html', food: 'food-detail.html', subs: 'subs-detail.html', event: 'event-detail.html' };
         const badges = {
           ride: { icon: '🚗', label: 'Ride', css: 'ride' },
           food: { icon: '🍔', label: 'Food', css: 'food' },
           subs: { icon: '🎬', label: 'Digital', css: 'digital' },
+          event: { icon: '🎉', label: 'Event', css: 'event' },
         };
 
         lobbies.forEach((lobby, idx) => {

@@ -366,7 +366,7 @@
         showToast('🎉 Lobby berhasil dibuat!', 'success');
 
         // Redirect to detail page with the new lobby ID
-        const detailPages = { ride: 'ride-detail', food: 'food-detail', subs: 'subs-detail', event: 'event-detail' };
+        const detailPages = { ride: 'ride-detail.html', food: 'food-detail.html', subs: 'subs-detail.html', event: 'event-detail.html' };
         const detailPage = detailPages[category] || 'index.html';
         setTimeout(() => {
           window.location.href = `${detailPage}?id=${data.data.id}`;
