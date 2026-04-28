@@ -245,11 +245,18 @@
               btn.onclick = lockRoom;
               btn.dataset.joined = 'false';
             } else if ((lobby.status === 'full' || lobby.status === 'open') && isMember.role === 'host') {
-              btn.textContent = '🚩 Tandai Pesanan Tiba';
-              btn.style.backgroundColor = '#2563eb';
-              btn.style.color = '#fff';
-              btn.onclick = hostArrive;
-              btn.disabled = false;
+              if (lobby.autoCompleteAt) {
+                btn.textContent = '⏳ Menunggu Customer Konfirmasi...';
+                btn.style.backgroundColor = '#d97706';
+                btn.style.color = '#fff';
+                btn.disabled = true;
+              } else {
+                btn.textContent = '🚩 Tandai Pesanan Tiba';
+                btn.style.backgroundColor = '#2563eb';
+                btn.style.color = '#fff';
+                btn.onclick = hostArrive;
+                btn.disabled = false;
+              }
             }
 
             if (isMember.role !== 'host' && !isMember.isArrived && (lobby.status === 'full' || lobby.status === 'open')) {
@@ -260,9 +267,11 @@
               btn.disabled = false;
 
               if (lobby.autoCompleteAt) {
-                // Start countdown timer
+                // Clear old timer if exists
+                if (window.arrivalTimer) clearInterval(window.arrivalTimer);
+
                 const targetTime = new Date(lobby.autoCompleteAt).getTime();
-                setInterval(() => {
+                window.arrivalTimer = setInterval(() => {
                   const now = new Date().getTime();
                   const distance = targetTime - now;
                   if (distance > 0) {
@@ -287,15 +296,23 @@
                 }
               }
 
-            } else if (isMember.isArrived) {
-              btn.textContent = '✓ Menunggu Host Selesai';
+            } else if (isMember.isArrived && lobby.status !== 'completed') {
+              btn.textContent = '✓ Menunggu Host Konfirmasi Akhir';
+              btn.style.backgroundColor = '#10b981';
+              btn.style.color = '#fff';
+              btn.style.opacity = '0.9';
               btn.disabled = true;
             }
 
             if (lobby.status === 'completed') {
+              if (window.arrivalTimer) clearInterval(window.arrivalTimer);
               btn.textContent = '🏁 Pesanan Selesai';
               btn.disabled = true;
-              btn.style.backgroundColor = '#6b7280';
+              btn.style.backgroundColor = '#059669';
+              btn.style.color = '#fff';
+              btn.style.opacity = '1';
+              const reportBtn = document.getElementById('btn-report');
+              if (reportBtn) reportBtn.remove();
             }
           } else if (lobby.currentSlots >= lobby.maxSlots) {
             btn.disabled = true;

@@ -193,4 +193,35 @@ router.get("/:id/reputation", async (req: Request, res: Response) => {
   }
 });
 
+// ─── GET /api/users/:id/stats — Get user statistics ───
+router.get("/:id/stats", async (req: Request, res: Response) => {
+  try {
+    const userId = req.params.id as string;
+    
+    // 1. Total Hosted Lobbies
+    const [hostedResult] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(lobbies)
+      .where(eq(lobbies.hostId, userId));
+      
+    // 2. Total Joined Lobbies (as member)
+    const [joinedResult] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(lobbyMembers)
+      .where(and(eq(lobbyMembers.userId, userId), eq(lobbyMembers.role, 'member')));
+      
+    // 3. We'll return these real stats
+    res.json({
+      data: {
+        totalHosted: Number(hostedResult?.count) || 0,
+        totalJoined: Number(joinedResult?.count) || 0,
+        memberSince: "2024" // dummy placeholder
+      }
+    });
+  } catch (err: any) {
+    console.error("[stats] Error:", err);
+    res.status(500).json({ error: "Failed to fetch stats." });
+  }
+});
+
 export default router;

@@ -40,18 +40,13 @@
           <p class="profile-email">bintang@binbin.app</p>
           <div class="profile-stats">
             <div class="profile-stat">
-              <strong>5</strong>
-              <span>Groups</span>
+              <strong id="stat-hosted">0</strong>
+              <span>Hosted</span>
             </div>
             <div class="profile-stat__divider"></div>
             <div class="profile-stat">
-              <strong>12</strong>
+              <strong id="stat-joined">0</strong>
               <span>Joined</span>
-            </div>
-            <div class="profile-stat__divider"></div>
-            <div class="profile-stat">
-              <strong>Rp 89k</strong>
-              <span>Saved</span>
             </div>
           </div>
           <!-- Host Reputation -->
@@ -210,14 +205,24 @@
           avatarImg.src = user.image || `https://ui-avatars.com/api/?name=${encodedName}&background=7c3aed&color=fff&size=96&bold=true`;
           avatarImg.alt = user.name || 'User';
 
-          // Load reputation
+          // Load reputation and stats
           try {
-            const repRes = await fetch(`${API}/api/users/${user.id}/reputation`);
+            const [repRes, statsRes] = await Promise.all([
+              fetch(`${API}/api/users/${user.id}/reputation`),
+              fetch(`${API}/api/users/${user.id}/stats`)
+            ]);
+
             const repData = await repRes.json();
             if (repData.data) {
               document.getElementById('stat-likes').textContent = repData.data.likesCount;
               document.getElementById('stat-dislikes').textContent = repData.data.dislikesCount;
               document.getElementById('stat-approval').textContent = repData.data.totalRatings > 0 ? repData.data.approvalScore + '%' : 'N/A';
+            }
+
+            const statsData = await statsRes.json();
+            if (statsData.data) {
+              document.getElementById('stat-hosted').textContent = statsData.data.totalHosted;
+              document.getElementById('stat-joined').textContent = statsData.data.totalJoined;
             }
           } catch {}
         }
