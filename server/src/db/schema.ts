@@ -252,6 +252,28 @@ export const hostRatings = pgTable(
 );
 
 /* ═══════════════════════════════════════════════════
+   Wallet Transactions (Balance ledger)
+   ═══════════════════════════════════════════════════ */
+
+export const walletTransactionTypeEnum = pgEnum("wallet_transaction_type", [
+  "topup",    // User adds money
+  "payment",  // User pays for lobby/admin fee
+  "refund",   // User gets refund from split reduction
+  "payout",   // Host receives total escrow
+]);
+
+export const walletTransactions = pgTable("wallet_transactions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  amount: integer("amount").notNull(), // Can be positive or negative
+  type: walletTransactionTypeEnum("type").notNull(),
+  description: text("description").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+/* ═══════════════════════════════════════════════════
    Transactions (Payment Gateway — future Midtrans)
    ═══════════════════════════════════════════════════ */
 

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { db } from "../db/index.js";
-import { user } from "../db/schema.js";
+import { user, walletTransactions } from "../db/schema.js";
 import { eq, sql } from "drizzle-orm";
 import { auth } from "../lib/auth.js";
 import { fromNodeHeaders } from "better-auth/node";
@@ -74,6 +74,14 @@ router.post("/topup", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "User not found" });
     }
 
+    // Log transaction
+    await db.insert(walletTransactions).values({
+      userId: sessionUser.id,
+      amount: amount,
+      type: "topup",
+      description: "Top Up Saldo",
+    });
+
     console.log(
       `[wallet] Top-up: user=${sessionUser.id}, amount=${amount}, newBalance=${updated.balance}`
     );
@@ -88,6 +96,28 @@ router.post("/topup", async (req: Request, res: Response) => {
   } catch (err: any) {
     console.error("[wallet] topup error:", err);
     res.status(500).json({ error: "Top-up failed. Please try again." });
+  }
+});
+
+// ─── GET /api/wallet/history ───
+router.get("/history", async (req: Request, res: Response) => {
+  try {
+    const sessionUser = await getSessionUser(req);
+    if (!sessionUser) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const history = await db
+      .select()
+      .from(walletTransactions)
+      .where(eq(walletTransactions.userId, sessionUser.id))
+      .orderBy(sql`${walletTransactions.createdAt} DESC`)
+      .limit(50);
+
+    res.json({ data: history });
+  } catch (err: any) {
+    console.error("[wallet] history error:", err);
+    res.status(500).json({ error: "Failed to fetch wallet history" });
   }
 });
 

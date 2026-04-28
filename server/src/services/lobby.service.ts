@@ -6,6 +6,7 @@ import {
   platformEarnings,
   user,
   lobbyMessages,
+  walletTransactions,
 } from "../db/schema.js";
 import { eq, and, desc, ilike, ne, lt, sql, or, inArray, isNotNull } from "drizzle-orm";
 import type { LobbyMetadata } from "../db/schema.js";
@@ -117,6 +118,13 @@ export async function createLobby(input: CreateLobbyInput) {
     .update(user)
     .set({ balance: sql`${user.balance} - ${hostFee}` })
     .where(eq(user.id, input.hostId));
+
+  await db.insert(walletTransactions).values({
+    userId: input.hostId,
+    amount: -hostFee,
+    type: "payment",
+    description: `Biaya Host untuk pembuatan Room ${input.category.toUpperCase()}`,
+  });
 
   // Calculate chat expiry
   let chatExpiresAt: Date | null = null;
@@ -365,6 +373,13 @@ export async function joinLobby(lobbyId: string, userId: string) {
     .set({ balance: sql`${user.balance} - ${totalCost}` })
     .where(eq(user.id, userId));
 
+  await db.insert(walletTransactions).values({
+    userId,
+    amount: -totalCost,
+    type: "payment",
+    description: `Patungan Room ${lobby.category.toUpperCase()} (Rp ${newPricePerPerson.toLocaleString("id-ID")}) + Admin (Rp ${lobby.memberFee.toLocaleString("id-ID")})`,
+  });
+
   // Insert member with escrow payment status
   await db.insert(lobbyMembers).values({
     lobbyId,
@@ -467,6 +482,13 @@ export async function finalizeLobby(lobbyId: string) {
         .update(user)
         .set({ balance: sql`${user.balance} + ${refundAmount}` })
         .where(eq(user.id, m.userId));
+
+      await db.insert(walletTransactions).values({
+        userId: m.userId,
+        amount: refundAmount,
+        type: "refund",
+        description: `Pengembalian dana (Refund) patungan Room ${lobby.category.toUpperCase()} karena kuota bertambah`,
+      });
     }
     
     // 2. Mark member as paid
@@ -484,6 +506,13 @@ export async function finalizeLobby(lobbyId: string) {
       .update(user)
       .set({ balance: sql`${user.balance} + ${totalHostPayout}` })
       .where(eq(user.id, lobby.hostId));
+
+    await db.insert(walletTransactions).values({
+      userId: lobby.hostId,
+      amount: totalHostPayout,
+      type: "payout",
+      description: `Pendapatan (Payout) dari pesanan Room ${lobby.category.toUpperCase()} yang telah selesai`,
+    });
   }
 
   // 4. Update lobby to completed

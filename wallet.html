@@ -249,10 +249,7 @@
         showToast(`Berhasil top-up ${formatRp(amount)}!`, 'success');
         document.getElementById('wallet-balance').textContent = formatRp(json.data.balance);
         closeTopUp();
-
-        // Add to history display
-        addTxToHistory('topup', `Top Up`, formatRp(amount), 'Baru saja');
-
+        loadHistory(); // Refresh history
       } catch (err) {
         showToast(err.message, 'error');
       } finally {
@@ -261,30 +258,64 @@
       }
     }
 
-    function addTxToHistory(type, label, amount, time) {
+    function renderHistory(historyList) {
       const container = document.getElementById('tx-history');
-      // Remove empty state
-      if (container.querySelector('[style*="text-align:center"]')) {
-        container.innerHTML = '';
+      if (!historyList || historyList.length === 0) {
+        container.innerHTML = `
+          <div style="padding:30px; text-align:center; color:var(--gray-400); font-size:13px;">
+            No transactions yet. Top up to get started!
+          </div>
+        `;
+        return;
       }
 
-      const iconClass = type === 'topup' ? 'tx-icon--topup' : 'tx-icon--fee';
-      const iconEmoji = type === 'topup' ? '💰' : '📋';
-      const amountClass = type === 'topup' ? 'tx-amount--plus' : 'tx-amount--minus';
-      const prefix = type === 'topup' ? '+' : '-';
+      container.innerHTML = '';
+      historyList.forEach(tx => {
+        let iconClass, iconEmoji, amountClass, prefix;
+        
+        if (tx.amount > 0) {
+          iconClass = 'tx-icon--topup';
+          iconEmoji = tx.type === 'topup' ? '💰' : tx.type === 'refund' ? '🔄' : '🎉';
+          amountClass = 'tx-amount--plus';
+          prefix = '+';
+        } else {
+          iconClass = 'tx-icon--fee';
+          iconEmoji = '🛒';
+          amountClass = 'tx-amount--minus';
+          prefix = '-';
+        }
 
-      const div = document.createElement('div');
-      div.className = 'tx-item';
-      div.innerHTML = `
-        <div class="tx-icon ${iconClass}">${iconEmoji}</div>
-        <div class="tx-info"><strong>${label}</strong><span>${time}</span></div>
-        <span class="tx-amount ${amountClass}">${prefix}${amount}</span>
-      `;
-      container.prepend(div);
+        const dateObj = new Date(tx.createdAt);
+        const dateStr = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+        const div = document.createElement('div');
+        div.className = 'tx-item';
+        div.innerHTML = `
+          <div class="tx-icon ${iconClass}">${iconEmoji}</div>
+          <div class="tx-info"><strong>${tx.description || tx.type}</strong><span>${dateStr}</span></div>
+          <span class="tx-amount ${amountClass}">${prefix}${formatRp(Math.abs(tx.amount))}</span>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function loadHistory() {
+      try {
+        const res = await fetch(`${API}/api/wallet/history`, { credentials: 'include' });
+        const json = await res.json();
+        if (res.ok) {
+          renderHistory(json.data);
+        }
+      } catch (err) {
+        console.error("Failed to load history:", err);
+      }
     }
 
     // ─── Init ───
-    document.addEventListener('DOMContentLoaded', loadBalance);
+    document.addEventListener('DOMContentLoaded', () => {
+      loadBalance();
+      loadHistory();
+    });
   </script>
 </body>
 </html>

@@ -185,6 +185,11 @@
       if (currentLobbyId) {
         initChat(currentLobbyId);
         await loadLobbyDetails(currentLobbyId);
+        
+        // Real-time UI Polling
+        setInterval(() => {
+            if (currentLobbyId) loadLobbyDetails(currentLobbyId);
+        }, 3000);
       } else {
         showToast('Lobby ID tidak ditemukan!', 'error');
         setTimeout(() => window.location.href = 'index.html', 2000);
