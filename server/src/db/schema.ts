@@ -155,6 +155,7 @@ export const lobbies = pgTable("lobbies", {
 
   // ─── Timing ───
   deadline: timestamp("deadline"),  // ride departure / food order cutoff
+  autoCompleteAt: timestamp("auto_complete_at"), // kapan auto-selesai (bila host pencet 'Tiba')
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

@@ -12,6 +12,7 @@ import {
   getLobbyChat,
   finalizeLobby,
   lockLobby,
+  hostArrived,
   ServiceError,
 } from "../services/lobby.service.js";
 
@@ -190,6 +191,18 @@ router.post("/:id/arrive", requireAuth, async (req, res) => {
     const lobbyId = uuidParam.parse(req.params.id);
     const user = getAuthUser(req);
     const result = await markArrived(lobbyId, user.id);
+    res.json({ data: result });
+  } catch (error) {
+    handleError(res, error);
+  }
+});
+
+// ─── POST /api/lobbies/:id/host-arrive — Host marks arrived (Starts timer) ───
+router.post("/:id/host-arrive", requireAuth, async (req, res) => {
+  try {
+    const lobbyId = uuidParam.parse(req.params.id);
+    const user = getAuthUser(req);
+    const result = await hostArrived(lobbyId, user.id);
     res.json({ data: result });
   } catch (error) {
     handleError(res, error);

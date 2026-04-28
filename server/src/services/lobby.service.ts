@@ -7,7 +7,7 @@ import {
   user,
   lobbyMessages,
 } from "../db/schema.js";
-import { eq, and, desc, ilike, ne, lt, sql, or, inArray } from "drizzle-orm";
+import { eq, and, desc, ilike, ne, lt, sql, or, inArray, isNotNull } from "drizzle-orm";
 import type { LobbyMetadata } from "../db/schema.js";
 
 /* ═══════════════════════════════════════════════════
@@ -180,23 +180,45 @@ export async function createLobby(input: CreateLobbyInput) {
 export async function expireOldLobbies() {
   const now = new Date();
   try {
-    const result = await db
+    // 1. Expire lobbies that missed their deadline
+    const expiredResult = await db
       .update(lobbies)
       .set({ status: "expired", updatedAt: now })
       .where(
         and(
-          // Only open or full lobbies can be expired
           or(eq(lobbies.status, "open"), eq(lobbies.status, "full")),
-          // Has a deadline and it has passed
           lt(lobbies.deadline, now)
         )
       )
       .returning({ id: lobbies.id, title: lobbies.title });
 
-    if (result.length > 0) {
-      console.log(`[Auto-Expire] ⏰ Expired ${result.length} lobbies:`, result.map(l => l.title).join(", "));
+    if (expiredResult.length > 0) {
+      console.log(`[Auto-Expire] ⏰ Expired ${expiredResult.length} lobbies:`, expiredResult.map(l => l.title).join(", "));
     }
-    return result;
+
+    // 2. Auto-complete lobbies that were marked arrived by host and timeout passed
+    const autoCompleteLobbies = await db
+      .select({ id: lobbies.id, title: lobbies.title })
+      .from(lobbies)
+      .where(
+        and(
+          ne(lobbies.status, "completed"),
+          ne(lobbies.status, "cancelled"),
+          isNotNull(lobbies.autoCompleteAt),
+          lt(lobbies.autoCompleteAt, now)
+        )
+      );
+
+    for (const l of autoCompleteLobbies) {
+      try {
+        await finalizeLobby(l.id);
+        console.log(`[Auto-Complete] ✅ Auto-completed lobby: ${l.title}`);
+      } catch (err) {
+        console.error(`[Auto-Complete] Error finalizing ${l.id}:`, err);
+      }
+    }
+
+    return expiredResult;
   } catch (err) {
     console.error("[Auto-Expire] Error:", err);
     return [];
@@ -316,8 +338,12 @@ export async function joinLobby(lobbyId: string, userId: string) {
   if (lobby.currentSlots >= lobby.maxSlots)
     throw new ServiceError("This lobby is full.", 400);
 
+  // ─── Calculate Dynamic Pricing ───
+  const newSlots = lobby.currentSlots + 1;
+  const newPricePerPerson = Math.ceil(lobby.totalPrice / newSlots);
+  const totalCost = newPricePerPerson + lobby.memberFee; // Split price + Admin fee to join
+
   // ─── Check Member Balance ───
-  const totalCost = lobby.memberFee; // Admin fee to join
   const [memberUser] = await db
     .select({ balance: user.balance })
     .from(user)
@@ -327,13 +353,13 @@ export async function joinLobby(lobbyId: string, userId: string) {
   if (!memberUser) throw new ServiceError("User not found.", 404);
   if (memberUser.balance < totalCost) {
     throw new ServiceError(
-      `Saldo tidak cukup! Butuh Rp ${totalCost.toLocaleString("id-ID")} untuk biaya admin. Saldo kamu: Rp ${memberUser.balance.toLocaleString("id-ID")}. Silakan top up dulu ya!`,
+      `Saldo tidak cukup! Butuh Rp ${totalCost.toLocaleString("id-ID")} (Rp ${newPricePerPerson.toLocaleString("id-ID")} patungan + Rp ${lobby.memberFee.toLocaleString("id-ID")} admin). Saldo kamu: Rp ${memberUser.balance.toLocaleString("id-ID")}. Silakan top up dulu!`,
       402,
       "INSUFFICIENT_BALANCE"
     );
   }
 
-  // ─── Deduct Member Fee from Balance ───
+  // ─── Deduct Fee and Escrow from Balance ───
   await db
     .update(user)
     .set({ balance: sql`${user.balance} - ${totalCost}` })
@@ -345,7 +371,7 @@ export async function joinLobby(lobbyId: string, userId: string) {
     userId,
     role: "member",
     paymentStatus: "escrow",
-    amountPaid: lobby.memberFee,
+    amountPaid: newPricePerPerson, // We only escrow the patungan price, admin fee goes to platform
     isArrived: false,
   });
 
@@ -358,9 +384,7 @@ export async function joinLobby(lobbyId: string, userId: string) {
   });
 
   // Update slot count + status + dynamic price
-  const newSlots = lobby.currentSlots + 1;
   const newStatus = newSlots >= lobby.maxSlots ? "full" : "open";
-  const newPricePerPerson = Math.ceil(lobby.totalPrice / newSlots);
 
   await db
     .update(lobbies)
@@ -420,7 +444,49 @@ export async function finalizeLobby(lobbyId: string) {
 
   const finalPrice = Math.ceil(lobby.totalPrice / lobby.currentSlots);
 
-  // Update lobby to completed
+  // ─── Refund Members & Transfer to Host ───
+  const membersInEscrow = await db
+    .select()
+    .from(lobbyMembers)
+    .where(
+      and(
+        eq(lobbyMembers.lobbyId, lobbyId),
+        eq(lobbyMembers.paymentStatus, "escrow"),
+        eq(lobbyMembers.role, "member")
+      )
+    );
+
+  let totalHostPayout = 0;
+
+  for (const m of membersInEscrow) {
+    const refundAmount = (m.amountPaid || 0) - finalPrice;
+    
+    // 1. Process Refund for member if any
+    if (refundAmount > 0) {
+      await db
+        .update(user)
+        .set({ balance: sql`${user.balance} + ${refundAmount}` })
+        .where(eq(user.id, m.userId));
+    }
+    
+    // 2. Mark member as paid
+    await db
+      .update(lobbyMembers)
+      .set({ paymentStatus: "paid" })
+      .where(eq(lobbyMembers.id, m.id));
+
+    totalHostPayout += finalPrice;
+  }
+
+  // 3. Payout to Host
+  if (totalHostPayout > 0) {
+    await db
+      .update(user)
+      .set({ balance: sql`${user.balance} + ${totalHostPayout}` })
+      .where(eq(user.id, lobby.hostId));
+  }
+
+  // 4. Update lobby to completed
   await db
     .update(lobbies)
     .set({
@@ -429,17 +495,6 @@ export async function finalizeLobby(lobbyId: string) {
       updatedAt: new Date(),
     })
     .where(eq(lobbies.id, lobbyId));
-
-  // Release escrow → paid for all members
-  await db
-    .update(lobbyMembers)
-    .set({ paymentStatus: "paid" })
-    .where(
-      and(
-        eq(lobbyMembers.lobbyId, lobbyId),
-        eq(lobbyMembers.paymentStatus, "escrow")
-      )
-    );
 
   return {
     finalized: true,
@@ -517,26 +572,42 @@ export async function markArrived(lobbyId: string, userId: string) {
     .from(lobbyMembers)
     .where(eq(lobbyMembers.lobbyId, lobbyId));
 
-  const allArrived = allMembers.every((m) => m.isArrived || m.userId === userId);
+  const allArrived = allMembers.every((m) => m.isArrived || m.role === "host");
 
   if (allArrived) {
+    // Let's call finalizeLobby to handle refunds and payouts
+    await finalizeLobby(lobbyId);
+
+    // Also delete chat for privacy (since finalizeLobby doesn't do this)
     await db
       .update(lobbies)
-      .set({
-        status: "completed",
-        chatDeletedAt: new Date(), // Delete chat on completion for ride/food
-        updatedAt: new Date(),
-      })
+      .set({ chatDeletedAt: new Date() })
       .where(eq(lobbies.id, lobbyId));
-
-    // Release escrow → paid
-    await db
-      .update(lobbyMembers)
-      .set({ paymentStatus: "paid" })
-      .where(and(eq(lobbyMembers.lobbyId, lobbyId), eq(lobbyMembers.paymentStatus, "escrow")));
   }
 
   return { arrived: true, lobbyCompleted: allArrived };
+}
+
+// ─── Host Arrived (Starts 10 min auto-complete) ───
+export async function hostArrived(lobbyId: string, userId: string) {
+  const [lobby] = await db
+    .select()
+    .from(lobbies)
+    .where(eq(lobbies.id, lobbyId))
+    .limit(1);
+
+  if (!lobby) throw new ServiceError("Lobby not found.", 404);
+  if (lobby.hostId !== userId) throw new ServiceError("Only host can do this.", 403);
+  if (lobby.status === "completed") throw new ServiceError("Lobby already completed.", 400);
+
+  const autoCompleteTime = new Date(Date.now() + 10 * 60000); // 10 minutes from now
+
+  await db
+    .update(lobbies)
+    .set({ autoCompleteAt: autoCompleteTime })
+    .where(eq(lobbies.id, lobbyId));
+
+  return { autoCompletesAt: autoCompleteTime };
 }
 
 // ─── My Lobbies ───

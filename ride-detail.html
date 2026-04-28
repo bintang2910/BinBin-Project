@@ -328,9 +328,30 @@
                       btn.style.color = '#fff';
                       btn.onclick = lockRoom;
                       btn.dataset.joined = 'false'; // allow click
-                    } else if (isMember.role === 'host') {
-                      btn.textContent = '✓ Room Locked / Full';
+                    } else if ((lobby.status === 'full' || lobby.status === 'open') && isMember.role === 'host') {
+                      btn.textContent = '🚩 Tandai Tiba di Tujuan';
+                      btn.style.backgroundColor = '#2563eb';
+                      btn.style.color = '#fff';
+                      btn.onclick = hostArrive;
+                      btn.disabled = false;
+                    }
+
+                    // Member Arrived button (if not host)
+                    if (isMember.role !== 'host' && !isMember.isArrived && (lobby.status === 'full' || lobby.status === 'open')) {
+                      btn.textContent = '📍 Pesanan Sudah Sampai';
+                      btn.style.backgroundColor = '#16a34a';
+                      btn.style.color = '#fff';
+                      btn.onclick = markCustomerArrived;
+                      btn.disabled = false;
+                    } else if (isMember.isArrived) {
+                      btn.textContent = '✓ Menunggu Host Selesai';
                       btn.disabled = true;
+                    }
+
+                    if (lobby.status === 'completed') {
+                      btn.textContent = '🏁 Perjalanan Selesai';
+                      btn.disabled = true;
+                      btn.style.backgroundColor = '#6b7280';
                     }
                 } else if (lobby.currentSlots >= lobby.maxSlots) {
                     btn.disabled = true;
@@ -442,6 +463,32 @@
         showToast(err.message, 'error');
         btn.disabled = false;
         btn.textContent = '🔒 Stop Pencarian (Mulai Sekarang)';
+      }
+    }
+
+    async function hostArrive() {
+      if (!confirm('Tandai sudah tiba di tujuan? Ini akan memulai timer 10 menit sebelum perjalanan selesai otomatis.')) return;
+      try {
+        const res = await fetch(`${API}/api/lobbies/${currentLobbyId}/host-arrive`, { method: 'POST', credentials: 'include' });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Failed to mark arrived');
+        showToast('Berhasil ditandai! Timer 10 menit dimulai.', 'success');
+        await loadLobbyDetails(currentLobbyId);
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function markCustomerArrived() {
+      if (!confirm('Konfirmasi pesanan/perjalanan sudah selesai dan sampai tujuan? Uang akan diteruskan ke host.')) return;
+      try {
+        const res = await fetch(`${API}/api/lobbies/${currentLobbyId}/arrive`, { method: 'POST', credentials: 'include' });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Failed to confirm');
+        showToast('Terima kasih atas konfirmasinya!', 'success');
+        await loadLobbyDetails(currentLobbyId);
+      } catch (err) {
+        showToast(err.message, 'error');
       }
     }
 
