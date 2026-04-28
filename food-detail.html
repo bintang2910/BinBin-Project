@@ -205,25 +205,33 @@
             </div>`;
         }
 
-        // Cost
+        // Fetch session early to calculate projected price
+        const sessionRes = await fetch(`${API}/api/auth/get-session`, { credentials: 'include' });
+        const sessionData = await sessionRes.json();
+        const isMember = sessionData?.user ? lobby.members.find(m => m.userId === sessionData.user.id) : null;
+
+        // Cost Calculation
+        let displaySlots = lobby.currentSlots;
+        if (!isMember && lobby.status === 'open' && lobby.currentSlots < lobby.maxSlots) {
+            displaySlots += 1;
+        }
+        const displayPrice = Math.ceil(lobby.totalPrice / displaySlots);
+        const displayTotal = displayPrice + lobby.memberFee;
+
         document.getElementById('cost-total').textContent = formatRp(lobby.totalPrice);
-        document.getElementById('cost-split-label').textContent = `Your Split (1/${lobby.currentSlots})`;
-        document.getElementById('cost-split').textContent = formatRp(lobby.pricePerPerson);
+        document.getElementById('cost-split-label').textContent = `Your Split (1/${displaySlots})`;
+        document.getElementById('cost-split').textContent = formatRp(displayPrice);
         document.getElementById('cost-fee').textContent = formatRp(lobby.memberFee);
-        document.getElementById('cost-pay').textContent = formatRp(lobby.totalToPay);
-        document.getElementById('cta-price').textContent = formatRp(lobby.totalToPay);
+        document.getElementById('cost-pay').textContent = formatRp(displayTotal);
+        document.getElementById('cta-price').textContent = formatRp(displayTotal);
 
         // Button state
         const btn = document.getElementById('btn-food-join');
-        const sessionRes = await fetch(`${API}/api/auth/get-session`, { credentials: 'include' });
-        const sessionData = await sessionRes.json();
         if (sessionData?.user) {
-          const isMember = lobby.members.find(m => m.userId === sessionData.user.id);
           if (isMember) {
             btn.dataset.joined = 'true';
             btn.textContent = '✓ Joined Order!';
             btn.classList.add('btn-joined');
-            document.getElementById('chat-section').style.display = '';
             document.getElementById('chat-section').style.display = '';
             if (lobby.status === 'open' && isMember.role === 'host' && lobby.currentSlots > 1) {
               btn.textContent = '🔒 Stop Pencarian (Mulai Sekarang)';
@@ -245,6 +253,35 @@
               btn.style.color = '#fff';
               btn.onclick = markCustomerArrived;
               btn.disabled = false;
+
+              if (lobby.autoCompleteAt) {
+                // Start countdown timer
+                const targetTime = new Date(lobby.autoCompleteAt).getTime();
+                setInterval(() => {
+                  const now = new Date().getTime();
+                  const distance = targetTime - now;
+                  if (distance > 0) {
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                    btn.textContent = `📍 Sudah Sampai (Auto in ${minutes}:${seconds < 10 ? '0' : ''}${seconds})`;
+                  }
+                }, 1000);
+
+                // Inject "Laporkan" button
+                if (!document.getElementById('btn-report')) {
+                  const reportBtn = document.createElement('button');
+                  reportBtn.id = 'btn-report';
+                  reportBtn.className = 'btn-primary';
+                  reportBtn.style.backgroundColor = '#ef4444';
+                  reportBtn.style.marginTop = '10px';
+                  reportBtn.textContent = '⚠️ Laporkan Masalah';
+                  reportBtn.onclick = () => {
+                    alert("Mohon hubungi CS di cs@binbin.com dan sebutkan ID Lobby ini.");
+                  };
+                  btn.parentNode.insertBefore(reportBtn, btn.nextSibling);
+                }
+              }
+
             } else if (isMember.isArrived) {
               btn.textContent = '✓ Menunggu Host Selesai';
               btn.disabled = true;
