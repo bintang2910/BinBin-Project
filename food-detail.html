@@ -224,6 +224,17 @@
             btn.textContent = '✓ Joined Order!';
             btn.classList.add('btn-joined');
             document.getElementById('chat-section').style.display = '';
+            document.getElementById('chat-section').style.display = '';
+            if (lobby.status === 'open' && isMember.role === 'host' && lobby.currentSlots > 1) {
+              btn.textContent = '🔒 Stop Pencarian (Mulai Sekarang)';
+              btn.style.backgroundColor = '#dc2626';
+              btn.style.color = '#fff';
+              btn.onclick = lockRoom;
+              btn.dataset.joined = 'false';
+            } else if (isMember.role === 'host') {
+              btn.textContent = '✓ Room Locked / Full';
+              btn.disabled = true;
+            }
           } else if (lobby.currentSlots >= lobby.maxSlots) {
             btn.disabled = true;
             btn.textContent = 'Room is Full';
@@ -279,6 +290,24 @@
         showToast(err.message, 'error');
         btn.textContent = 'Join & Pay Admin Fee';
         btn.disabled = false;
+      }
+    }
+
+    async function lockRoom() {
+      if (!confirm('Yakin ingin menghentikan pencarian dan mengunci room ini sekarang?')) return;
+      const btn = document.getElementById('btn-food-join');
+      btn.textContent = 'Locking...';
+      btn.disabled = true;
+      try {
+        const res = await fetch(`${API}/api/lobbies/${currentLobbyId}/lock`, { method: 'POST', credentials: 'include' });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Failed to lock room');
+        showToast('Room berhasil dikunci!', 'success');
+        await loadLobbyDetails(currentLobbyId);
+      } catch (err) {
+        showToast(err.message, 'error');
+        btn.disabled = false;
+        btn.textContent = '🔒 Stop Pencarian (Mulai Sekarang)';
       }
     }
   </script>

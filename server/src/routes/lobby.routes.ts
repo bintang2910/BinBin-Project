@@ -11,6 +11,7 @@ import {
   markArrived,
   getLobbyChat,
   finalizeLobby,
+  lockLobby,
   ServiceError,
 } from "../services/lobby.service.js";
 
@@ -154,6 +155,18 @@ router.post("/:id/join", requireAuth, async (req, res) => {
     const lobbyId = uuidParam.parse(req.params.id);
     const user = getAuthUser(req);
     const result = await joinLobby(lobbyId, user.id);
+    res.json({ data: result });
+  } catch (error) {
+    handleError(res, error);
+  }
+});
+
+// ─── POST /api/lobbies/:id/lock — Lock lobby (host only) ───
+router.post("/:id/lock", requireAuth, async (req, res) => {
+  try {
+    const lobbyId = uuidParam.parse(req.params.id);
+    const user = getAuthUser(req);
+    const result = await lockLobby(lobbyId, user.id);
     res.json({ data: result });
   } catch (error) {
     handleError(res, error);

@@ -375,6 +375,36 @@ export async function joinLobby(lobbyId: string, userId: string) {
   return getLobbyDetail(lobbyId, userId);
 }
 
+// ─── Lock Lobby (Host only) ───
+export async function lockLobby(lobbyId: string, userId: string) {
+  const [lobby] = await db
+    .select()
+    .from(lobbies)
+    .where(eq(lobbies.id, lobbyId))
+    .limit(1);
+
+  if (!lobby) throw new ServiceError("Lobby not found.", 404);
+  if (lobby.hostId !== userId)
+    throw new ServiceError("Only the host can lock the lobby.", 403);
+  if (lobby.status !== "open")
+    throw new ServiceError(`Cannot lock a lobby that is ${lobby.status}.`, 400);
+
+  // Dynamic price is already handled automatically during finalize,
+  // but let's make sure pricePerPerson is calculated based on currentSlots
+  const newPricePerPerson = Math.ceil(lobby.totalPrice / lobby.currentSlots);
+
+  await db
+    .update(lobbies)
+    .set({
+      status: "full",
+      pricePerPerson: newPricePerPerson,
+      updatedAt: new Date(),
+    })
+    .where(eq(lobbies.id, lobbyId));
+
+  return getLobbyDetail(lobbyId, userId);
+}
+
 // ─── Finalize Lobby (Timer Expired) ───
 export async function finalizeLobby(lobbyId: string) {
   const [lobby] = await db
