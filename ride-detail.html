@@ -321,9 +321,61 @@
             if(sessionData?.user) {
                 if(isMember) {
                     btn.dataset.joined = 'true';
-                    btn.textContent = '✓ Seat Reserved!';
                     btn.classList.add('btn-joined');
                     document.getElementById('chat-section').style.display = '';
+                    
+                    // Set default joined state text (can be overridden below)
+                    let btnText = '✓ Seat Reserved!';
+                    let btnBg = '';
+                    let btnColor = '';
+                    let btnDisabled = true;
+                    let btnOnClick = null;
+
+                    if (isMember.role === 'host') {
+                      if (lobby.status === 'open' && lobby.currentSlots > 1) {
+                        btnText = '🔒 Stop Pencarian (Mulai Sekarang)';
+                        btnBg = '#dc2626';
+                        btnColor = '#fff';
+                        btnDisabled = false;
+                        btnOnClick = lockRoom;
+                        btn.dataset.joined = 'false';
+                      } else if (lobby.status === 'full' || lobby.status === 'open') {
+                        if (lobby.autoCompleteAt) {
+                          btnText = '⏳ Menunggu Customer Konfirmasi...';
+                          btnBg = '#d97706';
+                          btnColor = '#fff';
+                        } else {
+                          btnText = '🚩 Tandai Tiba di Tujuan';
+                          btnBg = '#2563eb';
+                          btnColor = '#fff';
+                          btnDisabled = false;
+                          btnOnClick = hostArrive;
+                        }
+                      }
+                    } else {
+                      // Customer logic
+                      if (lobby.status === 'completed') {
+                        // handled below
+                      } else if (isMember.isArrived) {
+                        btnText = '✓ Menunggu Host Konfirmasi Akhir';
+                        btnBg = '#10b981';
+                        btnColor = '#fff';
+                      } else if (lobby.status === 'full' || lobby.status === 'open') {
+                        btnText = '📍 Pesanan Sudah Sampai';
+                        btnBg = '#16a34a';
+                        btnColor = '#fff';
+                        btnDisabled = false;
+                        btnOnClick = markCustomerArrived;
+                      }
+                    }
+
+                    // Apply text synchronously to prevent flicker before await
+                    btn.textContent = btnText;
+                    if(btnBg) btn.style.backgroundColor = btnBg;
+                    if(btnColor) btn.style.color = btnColor;
+                    btn.disabled = btnDisabled;
+                    if(btnOnClick) btn.onclick = btnOnClick;
+
                     if(isMember.role !== 'host') {
                       document.getElementById('rate-host-section').style.display = '';
                       // Load host reputation
@@ -335,35 +387,10 @@
                           document.getElementById('host-dislikes').textContent = repData.data.dislikesCount;
                         }
                       } catch {}
-                    } else if (lobby.status === 'open' && lobby.currentSlots > 1) {
-                      // Show Lock Button for Host
-                      btn.textContent = '🔒 Stop Pencarian (Mulai Sekarang)';
-                      btn.style.backgroundColor = '#dc2626';
-                      btn.style.color = '#fff';
-                      btn.onclick = lockRoom;
-                      btn.dataset.joined = 'false'; // allow click
-                    } else if ((lobby.status === 'full' || lobby.status === 'open') && isMember.role === 'host') {
-                      if (lobby.autoCompleteAt) {
-                        btn.textContent = '⏳ Menunggu Customer Konfirmasi...';
-                        btn.style.backgroundColor = '#d97706';
-                        btn.style.color = '#fff';
-                        btn.disabled = true;
-                      } else {
-                        btn.textContent = '🚩 Tandai Tiba di Tujuan';
-                        btn.style.backgroundColor = '#2563eb';
-                        btn.style.color = '#fff';
-                        btn.onclick = hostArrive;
-                        btn.disabled = false;
-                      }
                     }
 
-                    // Member Arrived button (if not host)
+                    // Handle Customer Timer Injection (needs to happen after the await if we want, but it's safe here)
                     if (isMember.role !== 'host' && !isMember.isArrived && (lobby.status === 'full' || lobby.status === 'open')) {
-                      btn.textContent = '📍 Pesanan Sudah Sampai';
-                      btn.style.backgroundColor = '#16a34a';
-                      btn.style.color = '#fff';
-                      btn.onclick = markCustomerArrived;
-                      btn.disabled = false;
 
                       if (lobby.autoCompleteAt) {
                         // Clear old timer if exists to prevent flicker
