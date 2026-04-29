@@ -136,8 +136,8 @@ export const lobbies = pgTable("lobbies", {
   // ─── Pricing ───
   totalPrice: integer("total_price").notNull(),            // harga total (Rp)
   pricePerPerson: integer("price_per_person").notNull(),   // totalPrice / currentSlots (dynamic)
-  hostFee: integer("host_fee").notNull().default(2000),    // ride/food = 2000, subs = 5000
-  memberFee: integer("member_fee").notNull().default(200), // admin fee per member ke platform
+  hostFee: integer("host_fee").notNull().default(0),       // Gratis untuk host
+  memberFee: integer("member_fee").notNull().default(1000), // Admin fee Rp 1.000 per member
 
   // ─── Subs only ───
   expiryDate: timestamp("expiry_date"),  // tanggal expired langganan (1 bulan, dll)

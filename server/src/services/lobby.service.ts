@@ -44,11 +44,11 @@ interface ListLobbiesInput {
 
 // ─── Dynamic Fee Lookup (Category-specific) ───
 const DEFAULT_FEES: Record<string, number> = {
-  host_fee_ride: 1000,
-  host_fee_food: 1000,
-  host_fee_subs: 2000,
-  host_fee_event: 1000,
-  member_fee: 200,
+  host_fee_ride: 0,
+  host_fee_food: 0,
+  host_fee_subs: 0,
+  host_fee_event: 0,
+  member_fee: 1000,
 };
 
 async function getFee(key: string): Promise<number> {
@@ -113,19 +113,6 @@ export async function createLobby(input: CreateLobbyInput) {
     );
   }
 
-  // ─── Deduct Host Fee from Balance ───
-  await db
-    .update(user)
-    .set({ balance: sql`${user.balance} - ${hostFee}` })
-    .where(eq(user.id, input.hostId));
-
-  await db.insert(walletTransactions).values({
-    userId: input.hostId,
-    amount: -hostFee,
-    type: "payment",
-    description: `Biaya Host untuk pembuatan Room ${input.category.toUpperCase()}`,
-  });
-
   // Calculate chat expiry
   let chatExpiresAt: Date | null = null;
   if (input.category === "subs") {
@@ -135,48 +122,69 @@ export async function createLobby(input: CreateLobbyInput) {
     chatExpiresAt = new Date();
     chatExpiresAt.setDate(chatExpiresAt.getDate() + 7); // Event: 7 days after event
   }
-  // ride/food: chatExpiresAt stays null — deleted on completion
 
-  // Insert lobby
-  const [lobby] = await db
-    .insert(lobbies)
-    .values({
-      hostId: input.hostId,
-      title,
-      category: input.category,
-      maxSlots: input.maxSlots,
-      currentSlots: 1,
-      totalPrice: input.totalPrice,
-      pricePerPerson,
-      hostFee,
-      memberFee,
-      distributionMethod: input.category === "food" ? (input.distributionMethod ?? null) : null,
-      meetingPoint: input.category === "food" && input.distributionMethod === "pickup"
-        ? (input.meetingPoint?.trim() || null)
-        : null,
-      metadata: input.metadata ?? null,
-      deadline: input.deadline ?? null,
-      expiryDate: input.expiryDate ?? null,
-      chatExpiresAt,
-    })
-    .returning();
+  // ─── Transaction: Deduct Fee, Create Lobby, Add Member, Record Earnings ───
+  const lobby = await db.transaction(async (tx) => {
+    // 1. Deduct Host Fee from Balance
+    await tx
+      .update(user)
+      .set({ balance: sql`${user.balance} - ${hostFee}` })
+      .where(eq(user.id, input.hostId));
 
-  // Insert host as first member
-  await db.insert(lobbyMembers).values({
-    lobbyId: lobby.id,
-    userId: input.hostId,
-    role: "host",
-    paymentStatus: "paid",
-    amountPaid: hostFee,
-    isArrived: false,
-  });
+    if (hostFee > 0) {
+      await tx.insert(walletTransactions).values({
+        userId: input.hostId,
+        amount: -hostFee,
+        type: "payment",
+        description: `Biaya Host untuk pembuatan Room ${input.category.toUpperCase()}`,
+      });
+    }
 
-  // Record platform earning from host fee
-  await db.insert(platformEarnings).values({
-    lobbyId: lobby.id,
-    amount: hostFee,
-    source: "host_fee",
-    userId: input.hostId,
+    // 2. Insert lobby
+    const [newLobby] = await tx
+      .insert(lobbies)
+      .values({
+        hostId: input.hostId,
+        title,
+        category: input.category,
+        maxSlots: input.maxSlots,
+        currentSlots: 1,
+        totalPrice: input.totalPrice,
+        pricePerPerson,
+        hostFee,
+        memberFee,
+        distributionMethod: input.category === "food" ? (input.distributionMethod ?? null) : null,
+        meetingPoint: input.category === "food" && input.distributionMethod === "pickup"
+          ? (input.meetingPoint?.trim() || null)
+          : null,
+        metadata: input.metadata ?? null,
+        deadline: input.deadline ?? null,
+        expiryDate: input.expiryDate ?? null,
+        chatExpiresAt,
+      })
+      .returning();
+
+    // 3. Insert host as first member
+    await tx.insert(lobbyMembers).values({
+      lobbyId: newLobby.id,
+      userId: input.hostId,
+      role: "host",
+      paymentStatus: "paid",
+      amountPaid: hostFee,
+      isArrived: false,
+    });
+
+    // 4. Record platform earning from host fee
+    if (hostFee > 0) {
+      await tx.insert(platformEarnings).values({
+        lobbyId: newLobby.id,
+        amount: hostFee,
+        source: "host_fee",
+        userId: input.hostId,
+      });
+    }
+
+    return newLobby;
   });
 
   return lobby;
@@ -367,49 +375,54 @@ export async function joinLobby(lobbyId: string, userId: string) {
     );
   }
 
-  // ─── Deduct Fee and Escrow from Balance ───
-  await db
-    .update(user)
-    .set({ balance: sql`${user.balance} - ${totalCost}` })
-    .where(eq(user.id, userId));
+  // ─── Transaction: Deduct Escrow/Fee, Add Member, Update Lobby, Record Earnings ───
+  await db.transaction(async (tx) => {
+    // 1. Deduct Fee and Escrow from Balance
+    await tx
+      .update(user)
+      .set({ balance: sql`${user.balance} - ${totalCost}` })
+      .where(eq(user.id, userId));
 
-  await db.insert(walletTransactions).values({
-    userId,
-    amount: -totalCost,
-    type: "payment",
-    description: `Patungan Room ${lobby.category.toUpperCase()} (Rp ${newPricePerPerson.toLocaleString("id-ID")}) + Admin (Rp ${lobby.memberFee.toLocaleString("id-ID")})`,
+    await tx.insert(walletTransactions).values({
+      userId,
+      amount: -totalCost,
+      type: "payment",
+      description: `Patungan Room ${lobby.category.toUpperCase()} (Rp ${newPricePerPerson.toLocaleString("id-ID")}) + Admin (Rp ${lobby.memberFee.toLocaleString("id-ID")})`,
+    });
+
+    // 2. Insert member with escrow payment status
+    await tx.insert(lobbyMembers).values({
+      lobbyId,
+      userId,
+      role: "member",
+      paymentStatus: "escrow",
+      amountPaid: newPricePerPerson, // We only escrow the patungan price, admin fee goes to platform
+      isArrived: false,
+    });
+
+    // 3. Record platform earning from member fee
+    if (lobby.memberFee > 0) {
+      await tx.insert(platformEarnings).values({
+        lobbyId,
+        amount: lobby.memberFee,
+        source: "member_fee",
+        userId,
+      });
+    }
+
+    // 4. Update slot count + status + dynamic price
+    const newStatus = newSlots >= lobby.maxSlots ? "full" : "open";
+
+    await tx
+      .update(lobbies)
+      .set({
+        currentSlots: newSlots,
+        status: newStatus as any,
+        pricePerPerson: newPricePerPerson,
+        updatedAt: new Date(),
+      })
+      .where(eq(lobbies.id, lobbyId));
   });
-
-  // Insert member with escrow payment status
-  await db.insert(lobbyMembers).values({
-    lobbyId,
-    userId,
-    role: "member",
-    paymentStatus: "escrow",
-    amountPaid: newPricePerPerson, // We only escrow the patungan price, admin fee goes to platform
-    isArrived: false,
-  });
-
-  // Record platform earning from member fee
-  await db.insert(platformEarnings).values({
-    lobbyId,
-    amount: lobby.memberFee,
-    source: "member_fee",
-    userId,
-  });
-
-  // Update slot count + status + dynamic price
-  const newStatus = newSlots >= lobby.maxSlots ? "full" : "open";
-
-  await db
-    .update(lobbies)
-    .set({
-      currentSlots: newSlots,
-      status: newStatus as any,
-      pricePerPerson: newPricePerPerson,
-      updatedAt: new Date(),
-    })
-    .where(eq(lobbies.id, lobbyId));
 
   return getLobbyDetail(lobbyId, userId);
 }
@@ -459,71 +472,73 @@ export async function finalizeLobby(lobbyId: string) {
 
   const finalPrice = Math.ceil(lobby.totalPrice / lobby.currentSlots);
 
-  // ─── Refund Members & Transfer to Host ───
-  const membersInEscrow = await db
-    .select()
-    .from(lobbyMembers)
-    .where(
-      and(
-        eq(lobbyMembers.lobbyId, lobbyId),
-        eq(lobbyMembers.paymentStatus, "escrow"),
-        eq(lobbyMembers.role, "member")
-      )
-    );
+  // ─── Transaction: Refund Members & Transfer to Host ───
+  await db.transaction(async (tx) => {
+    const membersInEscrow = await tx
+      .select()
+      .from(lobbyMembers)
+      .where(
+        and(
+          eq(lobbyMembers.lobbyId, lobbyId),
+          eq(lobbyMembers.paymentStatus, "escrow"),
+          eq(lobbyMembers.role, "member")
+        )
+      );
 
-  let totalHostPayout = 0;
+    let totalHostPayout = 0;
 
-  for (const m of membersInEscrow) {
-    const refundAmount = (m.amountPaid || 0) - finalPrice;
-    
-    // 1. Process Refund for member if any
-    if (refundAmount > 0) {
-      await db
+    for (const m of membersInEscrow) {
+      const refundAmount = (m.amountPaid || 0) - finalPrice;
+      
+      // 1. Process Refund for member if any
+      if (refundAmount > 0) {
+        await tx
+          .update(user)
+          .set({ balance: sql`${user.balance} + ${refundAmount}` })
+          .where(eq(user.id, m.userId));
+
+        await tx.insert(walletTransactions).values({
+          userId: m.userId,
+          amount: refundAmount,
+          type: "refund",
+          description: `Pengembalian dana (Refund) patungan Room ${lobby.category.toUpperCase()} karena kuota bertambah`,
+        });
+      }
+      
+      // 2. Mark member as paid
+      await tx
+        .update(lobbyMembers)
+        .set({ paymentStatus: "paid" })
+        .where(eq(lobbyMembers.id, m.id));
+
+      totalHostPayout += finalPrice;
+    }
+
+    // 3. Payout to Host
+    if (totalHostPayout > 0) {
+      await tx
         .update(user)
-        .set({ balance: sql`${user.balance} + ${refundAmount}` })
-        .where(eq(user.id, m.userId));
+        .set({ balance: sql`${user.balance} + ${totalHostPayout}` })
+        .where(eq(user.id, lobby.hostId));
 
-      await db.insert(walletTransactions).values({
-        userId: m.userId,
-        amount: refundAmount,
-        type: "refund",
-        description: `Pengembalian dana (Refund) patungan Room ${lobby.category.toUpperCase()} karena kuota bertambah`,
+      await tx.insert(walletTransactions).values({
+        userId: lobby.hostId,
+        amount: totalHostPayout,
+        type: "payout",
+        description: `Pendapatan (Payout) dari pesanan Room ${lobby.category.toUpperCase()} yang telah selesai`,
       });
     }
-    
-    // 2. Mark member as paid
-    await db
-      .update(lobbyMembers)
-      .set({ paymentStatus: "paid" })
-      .where(eq(lobbyMembers.id, m.id));
 
-    totalHostPayout += finalPrice;
-  }
-
-  // 3. Payout to Host
-  if (totalHostPayout > 0) {
-    await db
-      .update(user)
-      .set({ balance: sql`${user.balance} + ${totalHostPayout}` })
-      .where(eq(user.id, lobby.hostId));
-
-    await db.insert(walletTransactions).values({
-      userId: lobby.hostId,
-      amount: totalHostPayout,
-      type: "payout",
-      description: `Pendapatan (Payout) dari pesanan Room ${lobby.category.toUpperCase()} yang telah selesai`,
-    });
-  }
-
-  // 4. Update lobby to completed
-  await db
-    .update(lobbies)
-    .set({
-      status: "completed",
-      pricePerPerson: finalPrice,
-      updatedAt: new Date(),
-    })
-    .where(eq(lobbies.id, lobbyId));
+    // 4. Update lobby to completed
+    await tx
+      .update(lobbies)
+      .set({
+        status: "completed",
+        pricePerPerson: finalPrice,
+        updatedAt: new Date(),
+      })
+      .where(eq(lobbies.id, lobbyId));
+  });
 
   return {
     finalized: true,

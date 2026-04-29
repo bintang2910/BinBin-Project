@@ -221,12 +221,25 @@
             displaySlots += 1;
         }
         const displayPrice = Math.ceil(lobby.totalPrice / displaySlots);
-        const displayTotal = displayPrice + lobby.memberFee;
+        const isAdminFree = (isMember && isMember.role === 'host');
+        const displayFee = isAdminFree ? 0 : lobby.memberFee;
+        const displayTotal = displayPrice + displayFee;
 
         document.getElementById('cost-total').textContent = formatRp(lobby.totalPrice);
         document.getElementById('cost-split-label').textContent = `Your Split (1/${displaySlots})`;
         document.getElementById('cost-split').textContent = formatRp(displayPrice);
-        document.getElementById('cost-fee').textContent = formatRp(lobby.memberFee);
+        
+        const costFeeEl = document.getElementById('cost-fee');
+        if (isAdminFree) {
+          costFeeEl.textContent = 'Gratis';
+          costFeeEl.style.color = '#16a34a';
+          costFeeEl.style.fontWeight = 'bold';
+        } else {
+          costFeeEl.textContent = formatRp(lobby.memberFee);
+          costFeeEl.style.color = '';
+          costFeeEl.style.fontWeight = '';
+        }
+        
         document.getElementById('cost-pay').textContent = formatRp(displayTotal);
         document.getElementById('cta-price').textContent = formatRp(displayTotal);
 

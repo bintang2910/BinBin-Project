@@ -284,7 +284,9 @@
                 displaySlots += 1; // Project the cost if this user joins
             }
             const displayPrice = Math.ceil(lobby.totalPrice / displaySlots);
-            const displayTotal = displayPrice + lobby.memberFee;
+            const isAdminFree = (isMember && isMember.role === 'host');
+            const displayFee = isAdminFree ? 0 : lobby.memberFee;
+            const displayTotal = displayPrice + displayFee;
 
             const elements = document.querySelectorAll('.payment-summary .summary-row span:nth-child(2)');
             const splitLabel = document.querySelectorAll('.payment-summary .summary-row span:first-child');
@@ -292,7 +294,17 @@
                elements[0].textContent = formatRp(lobby.totalPrice);
                if(splitLabel[1]) splitLabel[1].textContent = `Your Split (1/${displaySlots})`;
                elements[1].textContent = formatRp(displayPrice);
-               elements[2].textContent = formatRp(lobby.memberFee);
+               
+               if (isAdminFree) {
+                 elements[2].textContent = 'Gratis';
+                 elements[2].style.color = '#16a34a'; // green
+                 elements[2].style.fontWeight = 'bold';
+               } else {
+                 elements[2].textContent = formatRp(lobby.memberFee);
+                 elements[2].style.color = '';
+                 elements[2].style.fontWeight = '';
+               }
+               
                elements[3].textContent = formatRp(displayTotal);
                document.querySelector('.cta-price strong').textContent = formatRp(displayTotal);
             }

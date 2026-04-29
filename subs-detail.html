@@ -254,24 +254,46 @@
             </div>`;
         }
 
-        // Cost
-        const savings = lobby.totalPrice - lobby.pricePerPerson;
+        // Fetch session early to calculate projected price
+        const sessionRes = await fetch(`${API}/api/auth/get-session`, { credentials: 'include' });
+        const sessionData = await sessionRes.json();
+        const isMember = sessionData?.user ? lobby.members.find(m => m.userId === sessionData.user.id) : null;
+
+        // Cost Calculation
+        let displaySlots = lobby.currentSlots;
+        if (!isMember && lobby.status === 'open' && lobby.currentSlots < lobby.maxSlots) {
+            displaySlots += 1;
+        }
+        const displayPrice = Math.ceil(lobby.totalPrice / displaySlots);
+        const isAdminFree = (isMember && isMember.role === 'host');
+        const displayFee = isAdminFree ? 0 : lobby.memberFee;
+        const displayTotal = displayPrice + displayFee;
+
+        const savings = lobby.totalPrice - displayPrice;
         const savingsPercent = Math.round((savings / lobby.totalPrice) * 100);
         document.getElementById('cost-full-label').textContent = `${lobby.title} (Full)`;
         document.getElementById('cost-full').textContent = `${formatRp(lobby.totalPrice)}/mo`;
-        document.getElementById('cost-split-label').textContent = `Your Share (1/${lobby.currentSlots})`;
-        document.getElementById('cost-split').textContent = `${formatRp(lobby.pricePerPerson)}/mo`;
+        document.getElementById('cost-split-label').textContent = `Your Share (1/${displaySlots})`;
+        document.getElementById('cost-split').textContent = `${formatRp(displayPrice)}/mo`;
         document.getElementById('cost-savings').textContent = `${formatRp(savings)}/mo (${savingsPercent}% off!)`;
-        document.getElementById('cost-fee').textContent = formatRp(lobby.memberFee);
-        document.getElementById('cost-pay').textContent = formatRp(lobby.totalToPay);
-        document.getElementById('cta-price').textContent = formatRp(lobby.totalToPay);
+        
+        const costFeeEl = document.getElementById('cost-fee');
+        if (isAdminFree) {
+          costFeeEl.textContent = 'Gratis';
+          costFeeEl.style.color = '#16a34a';
+          costFeeEl.style.fontWeight = 'bold';
+        } else {
+          costFeeEl.textContent = formatRp(lobby.memberFee);
+          costFeeEl.style.color = '';
+          costFeeEl.style.fontWeight = '';
+        }
+        
+        document.getElementById('cost-pay').textContent = formatRp(displayTotal);
+        document.getElementById('cta-price').textContent = formatRp(displayTotal);
 
         // Button state
         const btn = document.getElementById('btn-subs-join');
-        const sessionRes = await fetch(`${API}/api/auth/get-session`, { credentials: 'include' });
-        const sessionData = await sessionRes.json();
         if (sessionData?.user) {
-          const isMember = lobby.members.find(m => m.userId === sessionData.user.id);
           if (isMember) {
             btn.dataset.joined = 'true';
             btn.textContent = '✓ Subscription Joined!';

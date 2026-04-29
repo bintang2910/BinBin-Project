@@ -220,12 +220,36 @@
           }
         }
 
-        // 2. Cost
+        // 2. Cost & Session
+        const sessionRes = await fetch(`${API}/api/auth/get-session`, { credentials: 'include' });
+        const sessionData = await sessionRes.json();
+        const isMember = sessionData?.user ? lobby.members.find(m => m.userId === sessionData.user.id) : null;
+
+        let displaySlots = lobby.currentSlots;
+        if (!isMember && lobby.status === 'open' && lobby.currentSlots < lobby.maxSlots) {
+            displaySlots += 1;
+        }
+        const displayPrice = Math.ceil(lobby.totalPrice / displaySlots);
+        const isAdminFree = (isMember && isMember.role === 'host');
+        const displayFee = isAdminFree ? 0 : lobby.memberFee;
+        const displayTotal = displayPrice + displayFee;
+
         document.getElementById('cost-total').textContent = formatRp(lobby.totalPrice);
-        document.getElementById('cost-slots').textContent = `${lobby.currentSlots} / ${lobby.maxSlots} orang`;
-        document.getElementById('cost-per-person').textContent = formatRp(lobby.pricePerPerson);
-        document.getElementById('cost-admin').textContent = formatRp(lobby.memberFee);
-        document.getElementById('cost-total-pay').textContent = formatRp(lobby.totalToPay);
+        document.getElementById('cost-slots').textContent = `${displaySlots} / ${lobby.maxSlots} orang`;
+        document.getElementById('cost-per-person').textContent = formatRp(displayPrice);
+        
+        const costAdminEl = document.getElementById('cost-admin');
+        if (isAdminFree) {
+            costAdminEl.textContent = 'Gratis';
+            costAdminEl.style.color = '#16a34a';
+            costAdminEl.style.fontWeight = 'bold';
+        } else {
+            costAdminEl.textContent = formatRp(lobby.memberFee);
+            costAdminEl.style.color = '';
+            costAdminEl.style.fontWeight = '';
+        }
+        
+        document.getElementById('cost-total-pay').textContent = formatRp(displayTotal);
 
         // 3. Slots
         document.getElementById('slot-display').textContent = `${lobby.currentSlots} / ${lobby.maxSlots}`;
@@ -267,11 +291,8 @@
 
         // 6. Button State
         const btn = document.getElementById('btn-event-join');
-        const sessionRes = await fetch(`${API}/api/auth/get-session`, { credentials: 'include' });
-        const sessionData = await sessionRes.json();
         if (sessionData?.user) {
           currentUserId = sessionData.user.id;
-          const isMember = lobby.members.find(m => m.userId === sessionData.user.id);
           if (isMember) {
             btn.dataset.joined = 'true';
             btn.textContent = '✓ Sudah Bergabung!';
