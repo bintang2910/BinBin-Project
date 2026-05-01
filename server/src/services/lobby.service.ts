@@ -627,7 +627,7 @@ export async function finalizeLobby(lobbyId: string) {
   };
 }
 
-// ─── Get Lobby Chat (Requires membership + payment) ───
+// ─── Get Lobby Chat (Requires membership + payment, or pending in pay_later) ───
 export async function getLobbyChat(lobbyId: string, requestUserId: string) {
   // Verify membership and payment status
   const [member] = await db
@@ -637,8 +637,19 @@ export async function getLobbyChat(lobbyId: string, requestUserId: string) {
     .limit(1);
 
   if (!member) throw new ServiceError("Only members can view the chat.", 403);
+
+  // Allow pending members in pay_later lobbies to chat
   if (member.paymentStatus !== "paid" && member.paymentStatus !== "escrow") {
-    throw new ServiceError("You must join and pay to access the chat.", 403);
+    // Check if lobby is pay_later — if so, allow pending members
+    const [lobby] = await db
+      .select({ paymentMethod: lobbies.paymentMethod })
+      .from(lobbies)
+      .where(eq(lobbies.id, lobbyId))
+      .limit(1);
+
+    if (!lobby || lobby.paymentMethod !== "pay_later") {
+      throw new ServiceError("You must join and pay to access the chat.", 403);
+    }
   }
 
   // Check if chat is deleted/expired

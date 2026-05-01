@@ -313,15 +313,15 @@
           if (isMember) {
             btn.dataset.joined = 'true';
             btn.classList.add('btn-joined');
-            document.getElementById('chat-section').style.display = '';
-            
             if (isMember.paymentStatus === 'pending') {
+                document.getElementById('chat-section').style.display = '';
                 btn.textContent = `💳 Bayar Sekarang (Rp ${displayTotal.toLocaleString('id-ID')})`;
                 btn.style.backgroundColor = '#059669';
                 btn.style.color = '#fff';
-                btn.onclick = payForLobby;
+                btn.dataset.action = 'pay';
                 btn.dataset.joined = 'false'; // Allow click
             } else {
+                document.getElementById('chat-section').style.display = '';
                 btn.textContent = '✓ Sudah Bergabung!';
                 // Show rating buttons (if not host)
                 if (isMember.role !== 'host') {
@@ -351,14 +351,16 @@
       }
     }
 
+    // Join Event Logic
     async function joinEvent() {
       const btn = document.getElementById('btn-event-join');
       if (btn.dataset.joined === 'true') return;
+      if (btn.dataset.action === 'pay') return payForLobby();
+      
+      btn.textContent = '⏳ Joining...';
+      btn.disabled = true;
 
       try {
-        btn.disabled = true;
-        btn.textContent = 'Joining...';
-
         const res = await fetch(`${API}/api/lobbies/${currentLobbyId}/join`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
