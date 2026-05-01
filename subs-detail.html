@@ -239,11 +239,21 @@
         const memberList = document.getElementById('subs-members');
         memberList.innerHTML = '';
         lobby.members.forEach((m, idx) => {
+          let badge = '';
+          if (m.role === 'host') {
+             badge = '<span class="member-badge host" style="font-size:10px; background:#dbeafe; color:#2563eb; padding:2px 8px; border-radius:999px; margin-left:8px; font-weight:700;">HOST</span>';
+          } else if (lobby.paymentMethod === 'pay_later') {
+             if (m.paymentStatus === 'pending') {
+                 badge = '<span style="font-size:10px; background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px; margin-left:8px; font-weight:bold;">🔴 Belum Bayar</span>';
+             } else {
+                 badge = '<span style="font-size:10px; background:#dbeafe; color:#1e3a8a; padding:2px 6px; border-radius:4px; margin-left:8px; font-weight:bold;">🟢 Lunas</span>';
+             }
+          }
+
           memberList.innerHTML += `
             <div class="member-row">
               <div class="avatar-sm"><img src="${m.userImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.userName)}&background=2563eb&color=fff`}" alt=""/></div>
-              <div class="member-info"><strong>${m.userName}</strong><span>${m.role === 'host' ? 'Host · ' : ''}Profile ${idx + 1}</span></div>
-              ${m.role === 'host' ? '<span class="member-badge host" style="font-size:10px; background:#dbeafe; color:#2563eb; padding:2px 8px; border-radius:999px; font-weight:700;">HOST</span>' : ''}
+              <div class="member-info"><strong>${m.userName}</strong><span>Profile ${idx + 1}</span>${badge}</div>
             </div>`;
         });
         for (let i = 0; i < lobby.maxSlots - lobby.currentSlots; i++) {
@@ -293,13 +303,27 @@
 
         // Button state
         const btn = document.getElementById('btn-subs-join');
+        
+        // Set initial state before checking if member
+        if (!isMember && lobby.paymentMethod === 'pay_later') {
+           btn.textContent = 'Join (Bayar Nanti)';
+        }
+        
         if (sessionData?.user) {
           if (isMember) {
             btn.dataset.joined = 'true';
-            btn.textContent = '✓ Subscription Joined!';
             btn.classList.add('btn-joined');
             document.getElementById('chat-section').style.display = '';
-            if (lobby.status === 'open' && isMember.role === 'host' && lobby.currentSlots > 1) {
+            
+            if (isMember.paymentStatus === 'pending') {
+                btn.textContent = `💳 Bayar Sekarang (Rp ${displayTotal.toLocaleString('id-ID')})`;
+                btn.style.backgroundColor = '#059669';
+                btn.style.color = '#fff';
+                btn.onclick = payForLobby;
+                btn.dataset.joined = 'false'; // Allow click
+            } else {
+                btn.textContent = '✓ Subscription Joined!';
+                if (lobby.status === 'open' && isMember.role === 'host' && lobby.currentSlots > 1) {
               btn.textContent = '🔒 Stop Pencarian (Mulai Sekarang)';
               btn.style.backgroundColor = '#dc2626';
               btn.style.color = '#fff';
@@ -347,22 +371,56 @@
         }
 
         btn.dataset.joined = 'true';
-        btn.textContent = '✓ Subscription Joined!';
+        if (json.data.paymentMethod === 'pay_later') {
+          btn.textContent = '✓ Joined! (Pending)';
+        } else {
+          btn.textContent = '✓ Subscription Joined!';
+        }
         btn.classList.add('btn-joined');
-
-        showToast('Berhasil join! Chat unlocked — minta credentials ke host.', 'success');
-
-        // Re-render
-        await loadLobbyDetails(currentLobbyId);
-
-        // Show chat
         document.getElementById('chat-section').style.display = '';
-        initChat(currentLobbyId);
-
+        showToast('Berhasil bergabung ke grup!', 'success');
+        
+        setTimeout(() => loadLobbyDetails(currentLobbyId), 1000);
       } catch (err) {
         console.error(err);
-        showToast(err.message, 'error');
-        btn.textContent = 'Join & Pay Admin Fee';
+        showToast('Gagal: ' + err.message, 'error');
+        btn.textContent = 'Join Subscription';
+        btn.disabled = false;
+      }
+    }
+
+    // Pay Logic
+    async function payForLobby() {
+      const btn = document.getElementById('btn-subs-join');
+      btn.textContent = '⏳ Processing...';
+      btn.disabled = true;
+
+      try {
+        if (!currentLobbyId) throw new Error("Lobby ID not found in URL");
+
+        const res = await fetch(`${API}/api/lobbies/${currentLobbyId}/pay`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+
+        const json = await res.json();
+        if (!res.ok) {
+          if (json.errorCode === 'INSUFFICIENT_BALANCE') {
+            showToast('💰 ' + json.error, 'error');
+            setTimeout(() => { if(confirm('Saldo tidak cukup. Mau top up sekarang?')) window.location.href = 'wallet.html'; }, 500);
+            btn.textContent = '💳 Bayar Sekarang';
+            btn.disabled = false;
+            return;
+          }
+          throw new Error(json.error || "Failed to pay for lobby");
+        }
+
+        showToast('💳 Pembayaran Berhasil!', 'success');
+        setTimeout(() => loadLobbyDetails(currentLobbyId), 1000);
+      } catch (err) {
+        console.error(err);
+        showToast('Gagal: ' + err.message, 'error');
+        btn.textContent = '💳 Bayar Sekarang';
         btn.disabled = false;
       }
     }

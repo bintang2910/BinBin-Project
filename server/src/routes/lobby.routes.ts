@@ -14,6 +14,7 @@ import {
   lockLobby,
   hostArrived,
   ServiceError,
+  payLobbyFee,
 } from "../services/lobby.service.js";
 
 const router = Router();
@@ -35,6 +36,7 @@ const createLobbySchema = z
     expiryDate: z.string().datetime().optional(),
     distributionMethod: z.enum(["pickup", "delivery"]).optional(),
     meetingPoint: z.string().max(200).optional(),
+    paymentMethod: z.enum(["pay_now", "pay_later"]).optional(),
     metadata: z.record(z.unknown()).optional(),
   })
   .refine(
@@ -137,6 +139,7 @@ router.post("/", requireAuth, async (req, res) => {
       category: body.category,
       maxSlots: body.maxSlots,
       totalPrice: body.totalPrice,
+      paymentMethod: body.paymentMethod,
       distributionMethod: body.distributionMethod,
       meetingPoint: body.meetingPoint,
       metadata: body.metadata as any,
@@ -156,6 +159,18 @@ router.post("/:id/join", requireAuth, async (req, res) => {
     const lobbyId = uuidParam.parse(req.params.id);
     const user = getAuthUser(req);
     const result = await joinLobby(lobbyId, user.id);
+    res.json({ data: result });
+  } catch (error) {
+    handleError(res, error);
+  }
+});
+
+// ─── POST /api/lobbies/:id/pay — Pay for a pending lobby (auth required) ───
+router.post("/:id/pay", requireAuth, async (req, res) => {
+  try {
+    const lobbyId = uuidParam.parse(req.params.id);
+    const user = getAuthUser(req);
+    const result = await payLobbyFee(lobbyId, user.id);
     res.json({ data: result });
   } catch (error) {
     handleError(res, error);

@@ -32,6 +32,7 @@ interface CreateLobbyInput {
   expiryDate?: Date;
   distributionMethod?: "pickup" | "delivery";
   meetingPoint?: string;
+  paymentMethod?: "pay_now" | "pay_later";
 }
 
 interface ListLobbiesInput {
@@ -161,6 +162,7 @@ export async function createLobby(input: CreateLobbyInput) {
         deadline: input.deadline ?? null,
         expiryDate: input.expiryDate ?? null,
         chatExpiresAt,
+        paymentMethod: input.paymentMethod || "pay_now",
       })
       .returning();
 
@@ -359,58 +361,60 @@ export async function joinLobby(lobbyId: string, userId: string) {
   const newPricePerPerson = Math.ceil(lobby.totalPrice / newSlots);
   const totalCost = newPricePerPerson + lobby.memberFee; // Split price + Admin fee to join
 
-  // ─── Check Member Balance ───
-  const [memberUser] = await db
-    .select({ balance: user.balance })
-    .from(user)
-    .where(eq(user.id, userId))
-    .limit(1);
-
-  if (!memberUser) throw new ServiceError("User not found.", 404);
-  if (memberUser.balance < totalCost) {
-    throw new ServiceError(
-      `Saldo tidak cukup! Butuh Rp ${totalCost.toLocaleString("id-ID")} (Rp ${newPricePerPerson.toLocaleString("id-ID")} patungan + Rp ${lobby.memberFee.toLocaleString("id-ID")} admin). Saldo kamu: Rp ${memberUser.balance.toLocaleString("id-ID")}. Silakan top up dulu!`,
-      402,
-      "INSUFFICIENT_BALANCE"
-    );
-  }
-
   // ─── Transaction: Deduct Escrow/Fee, Add Member, Update Lobby, Record Earnings ───
   await db.transaction(async (tx) => {
-    // 1. Deduct Fee and Escrow from Balance
-    await tx
-      .update(user)
-      .set({ balance: sql`${user.balance} - ${totalCost}` })
-      .where(eq(user.id, userId));
+    
+    // 1. Check Balance & Deduct if Pay Now
+    if (lobby.paymentMethod === "pay_now") {
+      const [memberUser] = await tx
+        .select({ balance: user.balance })
+        .from(user)
+        .where(eq(user.id, userId))
+        .limit(1);
 
-    await tx.insert(walletTransactions).values({
-      userId,
-      amount: -totalCost,
-      type: "payment",
-      description: `Patungan Room ${lobby.category.toUpperCase()} (Rp ${newPricePerPerson.toLocaleString("id-ID")}) + Admin (Rp ${lobby.memberFee.toLocaleString("id-ID")})`,
-    });
+      if (!memberUser) throw new ServiceError("User not found.", 404);
+      if (memberUser.balance < totalCost) {
+        throw new ServiceError(
+          `Saldo tidak cukup! Butuh Rp ${totalCost.toLocaleString("id-ID")} (Rp ${newPricePerPerson.toLocaleString("id-ID")} patungan + Rp ${lobby.memberFee.toLocaleString("id-ID")} admin). Saldo kamu: Rp ${memberUser.balance.toLocaleString("id-ID")}. Silakan top up dulu!`,
+          402,
+          "INSUFFICIENT_BALANCE"
+        );
+      }
 
-    // 2. Insert member with escrow payment status
+      await tx
+        .update(user)
+        .set({ balance: sql`${user.balance} - ${totalCost}` })
+        .where(eq(user.id, userId));
+
+      await tx.insert(walletTransactions).values({
+        userId,
+        amount: -totalCost,
+        type: "payment",
+        description: `Patungan Room ${lobby.category.toUpperCase()} (Rp ${newPricePerPerson.toLocaleString("id-ID")}) + Admin (Rp ${lobby.memberFee.toLocaleString("id-ID")})`,
+      });
+      
+      // Record platform earning from member fee
+      if (lobby.memberFee > 0) {
+        await tx.insert(platformEarnings).values({
+          lobbyId,
+          amount: lobby.memberFee,
+          source: "member_fee",
+          userId,
+        });
+      }
+    }
+
+    // 2. Insert member with corresponding payment status
     await tx.insert(lobbyMembers).values({
       lobbyId,
       userId,
       role: "member",
-      paymentStatus: "escrow",
-      amountPaid: newPricePerPerson, // We only escrow the patungan price, admin fee goes to platform
+      paymentStatus: lobby.paymentMethod === "pay_now" ? "escrow" : "pending",
+      amountPaid: lobby.paymentMethod === "pay_now" ? newPricePerPerson : 0, 
       isArrived: false,
     });
 
-    // 3. Record platform earning from member fee
-    if (lobby.memberFee > 0) {
-      await tx.insert(platformEarnings).values({
-        lobbyId,
-        amount: lobby.memberFee,
-        source: "member_fee",
-        userId,
-      });
-    }
-
-    // 4. Update slot count + status + dynamic price
+    // 3. Update slot count + status + dynamic price
     const newStatus = newSlots >= lobby.maxSlots ? "full" : "open";
 
     await tx
@@ -422,6 +426,82 @@ export async function joinLobby(lobbyId: string, userId: string) {
         updatedAt: new Date(),
       })
       .where(eq(lobbies.id, lobbyId));
+  });
+
+  return getLobbyDetail(lobbyId, userId);
+}
+
+// ─── Pay for Lobby (Pay Later feature) ───
+export async function payLobbyFee(lobbyId: string, userId: string) {
+  const [lobby] = await db
+    .select()
+    .from(lobbies)
+    .where(eq(lobbies.id, lobbyId))
+    .limit(1);
+
+  if (!lobby) throw new ServiceError("Lobby not found.", 404);
+
+  const [member] = await db
+    .select()
+    .from(lobbyMembers)
+    .where(and(eq(lobbyMembers.lobbyId, lobbyId), eq(lobbyMembers.userId, userId)))
+    .limit(1);
+
+  if (!member) throw new ServiceError("You are not a member of this lobby.", 403);
+  if (member.paymentStatus !== "pending") throw new ServiceError("You have already paid or failed.", 400);
+
+  // Re-calculate the dynamic pricing (price is based on current slots)
+  const currentPricePerPerson = Math.ceil(lobby.totalPrice / lobby.currentSlots);
+  const totalCost = currentPricePerPerson + lobby.memberFee;
+
+  await db.transaction(async (tx) => {
+    // 1. Check Balance
+    const [memberUser] = await tx
+      .select({ balance: user.balance })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+
+    if (!memberUser) throw new ServiceError("User not found.", 404);
+    if (memberUser.balance < totalCost) {
+      throw new ServiceError(
+        `Saldo tidak cukup! Butuh Rp ${totalCost.toLocaleString("id-ID")}. Saldo kamu: Rp ${memberUser.balance.toLocaleString("id-ID")}. Silakan top up dulu!`,
+        402,
+        "INSUFFICIENT_BALANCE"
+      );
+    }
+
+    // 2. Deduct Balance
+    await tx
+      .update(user)
+      .set({ balance: sql`${user.balance} - ${totalCost}` })
+      .where(eq(user.id, userId));
+
+    await tx.insert(walletTransactions).values({
+      userId,
+      amount: -totalCost,
+      type: "payment",
+      description: `Pembayaran Room ${lobby.category.toUpperCase()} (Rp ${currentPricePerPerson.toLocaleString("id-ID")}) + Admin (Rp ${lobby.memberFee.toLocaleString("id-ID")})`,
+    });
+
+    // 3. Record platform earning
+    if (lobby.memberFee > 0) {
+      await tx.insert(platformEarnings).values({
+        lobbyId,
+        amount: lobby.memberFee,
+        source: "member_fee",
+        userId,
+      });
+    }
+
+    // 4. Update member payment status to escrow
+    await tx
+      .update(lobbyMembers)
+      .set({
+        paymentStatus: "escrow",
+        amountPaid: currentPricePerPerson,
+      })
+      .where(eq(lobbyMembers.id, member.id));
   });
 
   return getLobbyDetail(lobbyId, userId);

@@ -207,6 +207,27 @@
             <p>Biaya Admin: <strong>Gratis</strong> (host), <strong>Rp 1.000</strong> (joiner). Biaya akan dibagi rata ke semua peserta. Chat grup aktif 7 hari setelah event.</p>
           </div>
         </div>
+        
+        <!-- Payment Method -->
+        <div class="form-group" style="margin-top:24px;">
+          <label class="form-label" style="font-size:16px;">💳 Metode Pembayaran untuk Joiner</label>
+          <div class="category-selector" style="grid-template-columns: 1fr 1fr; gap:12px;">
+            <label class="radio-card">
+              <input type="radio" name="payment_method" value="pay_now" checked>
+              <span class="radio-content" style="font-size:14px; text-align:center;">
+                <strong style="display:block; margin-bottom:4px; font-size:16px; color:var(--text-dark);">⚡ Pay Now</strong>
+                <span style="font-size:12px; color:var(--text-gray);">Bayar Langsung (Saldo otomatis dipotong saat join)</span>
+              </span>
+            </label>
+            <label class="radio-card">
+              <input type="radio" name="payment_method" value="pay_later">
+              <span class="radio-content" style="font-size:14px; text-align:center;">
+                <strong style="display:block; margin-bottom:4px; font-size:16px; color:var(--text-dark);">🕒 Pay Later</strong>
+                <span style="font-size:12px; color:var(--text-gray);">Join Dulu Baru Bayar (Tunggu harga murah baru bayar)</span>
+              </span>
+            </label>
+          </div>
+        </div>
 
         <!-- Submit -->
         <button type="submit" class="btn-primary form-submit" style="background:var(--purple-600); color:white; width:100%; justify-content:center; margin-top:24px;">
@@ -301,7 +322,8 @@
         btn.textContent = 'Creating...';
 
         const category = document.querySelector('input[name="category"]:checked').value;
-        let payload = { category };
+        const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
+        let payload = { category, paymentMethod };
 
         if (category === 'ride') {
           payload.title = `Tumpangan ke ${document.getElementById('ride-dropoff').value || 'Tujuan'}`;

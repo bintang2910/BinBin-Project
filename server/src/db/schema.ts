@@ -105,6 +105,11 @@ export const distributionMethodEnum = pgEnum("distribution_method", [
   "delivery",   // diantar (biaya antar diatur di chat)
 ]);
 
+export const paymentMethodEnum = pgEnum("payment_method", [
+  "pay_now",    // bayar langsung saat join
+  "pay_later",  // join dulu, bayar nanti
+]);
+
 /* ═══════════════════════════════════════════════════
    Platform Settings (Dynamic Fees & Config)
    ═══════════════════════════════════════════════════ */
@@ -138,6 +143,7 @@ export const lobbies = pgTable("lobbies", {
   pricePerPerson: integer("price_per_person").notNull(),   // totalPrice / currentSlots (dynamic)
   hostFee: integer("host_fee").notNull().default(0),       // Gratis untuk host
   memberFee: integer("member_fee").notNull().default(1000), // Admin fee Rp 1.000 per member
+  paymentMethod: paymentMethodEnum("payment_method").notNull().default("pay_now"),
 
   // ─── Subs only ───
   expiryDate: timestamp("expiry_date"),  // tanggal expired langganan (1 bulan, dll)

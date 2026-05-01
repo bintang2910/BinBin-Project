@@ -275,10 +275,21 @@
         const memberList = document.getElementById('member-list');
         memberList.innerHTML = '';
         lobby.members.forEach(m => {
+          let badge = '';
+          if (m.role === 'host') {
+             badge = '<span style="font-size:10px; background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px; margin-left:8px; font-weight:bold;">HOST</span>';
+          } else if (lobby.paymentMethod === 'pay_later') {
+             if (m.paymentStatus === 'pending') {
+                 badge = '<span style="font-size:10px; background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px; margin-left:8px; font-weight:bold;">🔴 Belum Bayar</span>';
+             } else {
+                 badge = '<span style="font-size:10px; background:#dbeafe; color:#1e3a8a; padding:2px 6px; border-radius:4px; margin-left:8px; font-weight:bold;">🟢 Lunas</span>';
+             }
+          }
+
           memberList.innerHTML += `
           <div class="member-row">
             <div class="avatar-sm"><img src="${m.userImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.userName)}&background=16a34a&color=fff`}" alt=""/></div>
-            <div class="member-info"><strong>${m.userName}</strong><span>${m.role === 'host' ? 'Host · ' : ''}Joined</span></div>
+            <div class="member-info"><strong>${m.userName}</strong><span>Joined</span>${badge}</div>
           </div>`;
         });
         for (let i = 0; i < lobby.maxSlots - lobby.currentSlots; i++) {
@@ -291,13 +302,27 @@
 
         // 6. Button State
         const btn = document.getElementById('btn-event-join');
+        
+        // Set initial state before checking if member
+        if (!isMember && lobby.paymentMethod === 'pay_later') {
+           btn.textContent = 'Join (Bayar Nanti)';
+        }
+        
         if (sessionData?.user) {
           currentUserId = sessionData.user.id;
           if (isMember) {
             btn.dataset.joined = 'true';
-            btn.textContent = '✓ Sudah Bergabung!';
             btn.classList.add('btn-joined');
             document.getElementById('chat-section').style.display = '';
+            
+            if (isMember.paymentStatus === 'pending') {
+                btn.textContent = `💳 Bayar Sekarang (Rp ${displayTotal.toLocaleString('id-ID')})`;
+                btn.style.backgroundColor = '#059669';
+                btn.style.color = '#fff';
+                btn.onclick = payForLobby;
+                btn.dataset.joined = 'false'; // Allow click
+            } else {
+                btn.textContent = '✓ Sudah Bergabung!';
             // Show rating buttons (if not host)
             if (isMember.role !== 'host') {
               document.getElementById('rating-section').style.display = '';
@@ -353,18 +378,56 @@
         }
 
         btn.dataset.joined = 'true';
-        btn.textContent = '✓ Sudah Bergabung!';
+        if (json.data.paymentMethod === 'pay_later') {
+          btn.textContent = '✓ Joined! (Pending)';
+        } else {
+          btn.textContent = '✓ Sudah Bergabung!';
+        }
         btn.classList.add('btn-joined');
-        showToast('🎉 Berhasil join! Group chat unlocked.', 'success');
-
-        await loadLobbyDetails(currentLobbyId);
         document.getElementById('chat-section').style.display = '';
-        initChat(currentLobbyId);
-
+        showToast('Berhasil bergabung ke grup!', 'success');
+        
+        setTimeout(() => loadLobbyDetails(currentLobbyId), 1000);
       } catch (err) {
         console.error(err);
-        showToast(err.message, 'error');
-        btn.textContent = '🎉 Join Event';
+        showToast('Gagal: ' + err.message, 'error');
+        btn.textContent = 'Join Event';
+        btn.disabled = false;
+      }
+    }
+
+    // Pay Logic
+    async function payForLobby() {
+      const btn = document.getElementById('btn-event-join');
+      btn.textContent = '⏳ Processing...';
+      btn.disabled = true;
+
+      try {
+        if (!currentLobbyId) throw new Error("Lobby ID not found in URL");
+
+        const res = await fetch(`${API}/api/lobbies/${currentLobbyId}/pay`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+
+        const json = await res.json();
+        if (!res.ok) {
+          if (json.errorCode === 'INSUFFICIENT_BALANCE') {
+            showToast('💰 ' + json.error, 'error');
+            setTimeout(() => { if(confirm('Saldo tidak cukup. Mau top up sekarang?')) window.location.href = 'wallet.html'; }, 500);
+            btn.textContent = '💳 Bayar Sekarang';
+            btn.disabled = false;
+            return;
+          }
+          throw new Error(json.error || "Failed to pay for lobby");
+        }
+
+        showToast('💳 Pembayaran Berhasil!', 'success');
+        setTimeout(() => loadLobbyDetails(currentLobbyId), 1000);
+      } catch (err) {
+        console.error(err);
+        showToast('Gagal: ' + err.message, 'error');
+        btn.textContent = '💳 Bayar Sekarang';
         btn.disabled = false;
       }
     }
