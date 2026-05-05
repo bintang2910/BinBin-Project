@@ -110,6 +110,12 @@ export const paymentMethodEnum = pgEnum("payment_method", [
   "pay_later",  // join dulu, bayar nanti
 ]);
 
+export const notificationTypeEnum = pgEnum("notification_type", [
+  "lobby_join",   // member join lobby
+  "lobby_status", // status changed (e.g. arrived)
+  "system",       // general system info
+]);
+
 /* ═══════════════════════════════════════════════════
    Platform Settings (Dynamic Fees & Config)
    ═══════════════════════════════════════════════════ */
@@ -299,6 +305,23 @@ export const transactions = pgTable("transactions", {
 });
 
 /* ═══════════════════════════════════════════════════
+   Notifications
+   ═══════════════════════════════════════════════════ */
+
+export const notifications = pgTable("notifications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  type: notificationTypeEnum("type").notNull().default("system"),
+  link: text("link"),
+  isRead: boolean("is_read").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+/* ═══════════════════════════════════════════════════
    Relations
    ═══════════════════════════════════════════════════ */
 
@@ -307,6 +330,7 @@ export const userRelations = relations(user, ({ many }) => ({
   memberships: many(lobbyMembers),
   earnings: many(platformEarnings),
   messages: many(lobbyMessages),
+  notifications: many(notifications),
 }));
 
 export const lobbyRelations = relations(lobbies, ({ one, many }) => ({
@@ -363,6 +387,13 @@ export const lobbyMessageRelations = relations(lobbyMessages, ({ one }) => ({
   }),
 }));
 
+export const notificationRelations = relations(notifications, ({ one }) => ({
+  user: one(user, {
+    fields: [notifications.userId],
+    references: [user.id],
+  }),
+}));
+
 /* ═══════════════════════════════════════════════════
    TypeScript Types
    ═══════════════════════════════════════════════════ */
@@ -411,3 +442,4 @@ export type PlatformEarning = typeof platformEarnings.$inferSelect;
 export type Transaction = typeof transactions.$inferSelect;
 export type PlatformSetting = typeof platformSettings.$inferSelect;
 export type LobbyMessage = typeof lobbyMessages.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;

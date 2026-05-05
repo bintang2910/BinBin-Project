@@ -18,16 +18,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  /* ─── Notification bell click ─── */
-  const notifBtn = document.getElementById('btn-notifications');
-  if (notifBtn) {
-    notifBtn.addEventListener('click', () => {
-      const dot = notifBtn.querySelector('.notif-dot');
-      if (dot) dot.style.display = dot.style.display === 'none' ? '' : 'none';
-    });
-  }
-
+  /* ─── Notification bell is now an anchor tag ─── */
 });
+
+async function checkUnreadNotifications() {
+  try {
+    const res = await fetch(`${API}/api/notifications`, { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      const dot = document.querySelector('.notif-dot');
+      if (dot) {
+        dot.style.display = data.unreadCount > 0 ? 'block' : 'none';
+      }
+    }
+  } catch (e) {
+    console.error("Error fetching notifications", e);
+  }
+}
 
 /* ═══════════════════════════════════════════════════
    Load Category Counts
@@ -116,6 +123,7 @@ async function checkAuth() {
 
     // Kalau sampai di baris ini, berarti aman & sudah login!
     console.log("Welcome,", data.user.name);
+    checkUnreadNotifications();
 
   } catch (err) {
     // Kalau server mati atau error jaringan, lempar ke login juga

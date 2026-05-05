@@ -10,6 +10,7 @@ import {
 } from "../db/schema.js";
 import { eq, and, desc, ilike, ne, lt, sql, or, inArray, isNotNull } from "drizzle-orm";
 import type { LobbyMetadata } from "../db/schema.js";
+import { createNotification } from "./notification.service.js";
 
 /* ═══════════════════════════════════════════════════
    Lobby Service — Business Logic Layer (v3)
@@ -428,6 +429,23 @@ export async function joinLobby(lobbyId: string, userId: string) {
       .where(eq(lobbies.id, lobbyId));
   });
 
+  // ─── Notify the host ───
+  const [memberUser] = await db
+    .select({ name: user.name })
+    .from(user)
+    .where(eq(user.id, userId))
+    .limit(1);
+
+  if (memberUser) {
+    await createNotification({
+      userId: lobby.hostId,
+      title: "New Member Joined",
+      message: `${memberUser.name} joined your lobby "${lobby.title}".`,
+      type: "lobby_join",
+      link: `${lobby.category}-detail.html?id=${lobbyId}`
+    }).catch(err => console.error("[Notification Error]", err));
+  }
+
   return getLobbyDetail(lobbyId, userId);
 }
 
@@ -741,6 +759,22 @@ export async function hostArrived(lobbyId: string, userId: string) {
     .update(lobbies)
     .set({ autoCompleteAt: autoCompleteTime })
     .where(eq(lobbies.id, lobbyId));
+
+  // ─── Notify Members ───
+  const members = await db
+    .select({ userId: lobbyMembers.userId })
+    .from(lobbyMembers)
+    .where(and(eq(lobbyMembers.lobbyId, lobbyId), ne(lobbyMembers.userId, userId)));
+
+  for (const m of members) {
+    await createNotification({
+      userId: m.userId,
+      title: "Host Arrived",
+      message: `The host for "${lobby.title}" has arrived.`,
+      type: "lobby_status",
+      link: `${lobby.category}-detail.html?id=${lobbyId}`
+    }).catch(err => console.error("[Notification Error]", err));
+  }
 
   return { autoCompletesAt: autoCompleteTime };
 }

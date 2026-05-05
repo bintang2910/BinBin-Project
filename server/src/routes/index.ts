@@ -3,6 +3,7 @@ import lobbyRoutes from "./lobby.routes.js";
 import paymentRoutes from "./payment.routes.js";
 import walletRoutes from "./wallet.routes.js";
 import ratingRoutes from "./rating.routes.js";
+import notificationRoutes from "./notification.routes.js";
 
 const router = Router();
 
@@ -10,6 +11,7 @@ router.use("/lobbies", lobbyRoutes);
 router.use("/payments", paymentRoutes);
 router.use("/wallet", walletRoutes);
 router.use("/users", ratingRoutes);
+router.use("/notifications", notificationRoutes);
 
 // Health check
 router.get("/health", (_req, res) => {

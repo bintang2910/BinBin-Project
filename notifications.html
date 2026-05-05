@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notifications — BinBin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="index.css" />
+  <style>
+    .notif-card {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+      position: relative;
+      margin-bottom: 12px;
+      transition: all 0.2s;
+    }
+    .notif-card.unread {
+      background: #fdfaf6;
+      border: 1px solid var(--purple-100);
+    }
+    .notif-card.unread::before {
+      content: '';
+      position: absolute;
+      left: 12px;
+      top: 24px;
+      width: 8px;
+      height: 8px;
+      background: var(--purple-600);
+      border-radius: 50%;
+    }
+    .notif-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--gray-100);
+      color: var(--gray-600);
+      flex-shrink: 0;
+      margin-left: 12px; /* make space for unread dot */
+    }
+    .notif-card.unread .notif-icon {
+      background: var(--purple-50);
+      color: var(--purple-600);
+    }
+    .notif-content {
+      flex: 1;
+    }
+    .notif-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--gray-900);
+      margin-bottom: 4px;
+    }
+    .notif-msg {
+      font-size: 13px;
+      color: var(--gray-600);
+      line-height: 1.4;
+      margin-bottom: 6px;
+    }
+    .notif-time {
+      font-size: 11px;
+      color: var(--gray-400);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+
+    <!-- Top Nav -->
+    <nav class="top-nav" style="justify-content: space-between; padding: 16px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <a href="index.html" style="color: var(--gray-800); text-decoration: none; padding: 4px; display: flex; align-items: center; justify-content: center; background: #f3f4f6; border-radius: 50%;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </a>
+        <h1 style="font-size: 18px; font-weight: 700; color: var(--gray-900);">Notifications</h1>
+      </div>
+      <button id="btn-read-all" style="background: none; border: none; color: var(--purple-600); font-weight: 600; font-size: 13px; cursor: pointer; padding: 4px;">
+        Mark all read
+      </button>
+    </nav>
+
+    <main class="main-content" style="padding-top: 16px;">
+      <section class="section">
+        <div id="notif-list">
+          <div style="padding:40px; text-align:center; color:var(--gray-400); font-size:14px;">
+            Loading notifications... <span class="auth-spinner" style="display:inline-block; border-color:var(--gray-400); border-top-color:transparent; margin-left:8px;"></span>
+          </div>
+        </div>
+      </section>
+      <div class="bottom-spacer"></div>
+    </main>
+
+  </div>
+
+  <script src="api-config.js"></script>
+  <script src="notifications.js"></script>
+</body>
+</html>
