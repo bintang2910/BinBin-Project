@@ -79,22 +79,24 @@ async function fetchNotifications() {
       `;
 
       card.addEventListener('click', async (e) => {
+        e.preventDefault(); // Take control of navigation
+        
         if (!notif.isRead) {
-          e.preventDefault(); // wait for read API
           try {
             await fetch(`${API}/api/notifications/${notif.id}/read`, {
               method: 'POST',
               credentials: 'include'
             });
-            if (card.href && card.href !== window.location.href + '#') {
-              window.location.href = card.href;
-            } else {
-              card.classList.remove('unread');
-            }
+            card.classList.remove('unread');
+            notif.isRead = true;
           } catch(err) {
-            console.error(err);
-            if (card.href && card.href !== window.location.href + '#') window.location.href = card.href;
+            console.error('Failed to mark read:', err);
           }
+        }
+        
+        // Navigate safely if there's a valid link
+        if (notif.link && notif.link !== '#' && notif.link !== '') {
+          window.location.href = notif.link;
         }
       });
 
