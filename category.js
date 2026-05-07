@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let title = 'All Lobbies';
     if (currentCategory === 'ride') title = '🚗 Ride Sharing';
     if (currentCategory === 'food') title = '🍔 Food Order';
-    if (currentCategory === 'subs') title = '🎬 Digital Subs';
+    if (currentCategory === 'subs') title = '🎬 Aplikasi Premium';
     if (currentCategory === 'event') title = '🎉 Event / Bebas';
     
     document.getElementById('category-title').textContent = title;
