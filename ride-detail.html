@@ -521,30 +521,18 @@
         } catch(e) {
             console.error(e);
             showToast('Gagal memuat detail Lobi: ' + e.message, 'error');
+            document.getElementById('ride-title').textContent = 'Grup Tidak Ditemukan';
+            document.getElementById('ride-pickup-display').textContent = '—';
+            document.getElementById('ride-dropoff-display').textContent = '—';
+            document.getElementById('ride-countdown').textContent = '--:--';
+            // Stop polling if lobby doesn't exist
+            currentLobbyId = null;
+            setTimeout(() => window.location.href = 'index.html', 3000);
         }
     }
 
-    // Countdown Timer
-    let rideSeconds = 15 * 60;
-    const countdownEl = document.getElementById('ride-countdown');
-    const rideTimer = setInterval(() => {
-      rideSeconds--;
-      const m = Math.floor(rideSeconds / 60).toString().padStart(2, '0');
-      const s = (rideSeconds % 60).toString().padStart(2, '0');
-      if(countdownEl) countdownEl.textContent = m + ':' + s;
-      if (rideSeconds <= 0) {
-        clearInterval(rideTimer);
-        // Finalize lobby when timer expires
-        if (currentLobbyId) {
-          fetch(`${API}/api/lobbies/${currentLobbyId}/finalize`, {
-            method: 'POST', credentials: 'include'
-          }).then(() => {
-            showToast('Timer habis! Harga final telah dihitung.', 'info');
-            loadLobbyDetails(currentLobbyId);
-          }).catch(err => console.error('Finalize error:', err));
-        }
-      }
-    }, 1000);
+    // Countdown Timer — Only starts when lobby data provides a departureTime
+    // The timer is started from within loadLobbyDetails after we have real data
 
     // Join Button Logic
     async function joinRide() {
