@@ -35,9 +35,13 @@ document.addEventListener('DOMContentLoaded', () => {
    Load Real-time Lobbies based on specific Category
    ═══════════════════════════════════════════════════ */
 
+let isFetching = false;
+
 async function fetchLobbies() {
     const container = document.getElementById('category-results');
-    if (!container) return;
+    if (!container || isFetching) return;
+
+    isFetching = true;
 
     try {
         const queryParams = new URLSearchParams({ status: 'open' });
@@ -58,8 +62,8 @@ async function fetchLobbies() {
             container.innerHTML = `
             <div style="padding:60px 20px; text-align:center; color:var(--gray-400); font-size:14px; width:100%; border-radius:12px; background:#f9fafb;">
               <p style="font-size:36px; margin-bottom:12px;">🫗</p>
-              <p style="font-weight:500; color:var(--gray-600);">No active lobbies</p>
-              <p style="margin-top:4px; font-size:13px;">There are no open lobbies for this category right now.</p>
+              <p style="font-weight:500; color:var(--gray-600);">Belum ada grup aktif</p>
+              <p style="margin-top:4px; font-size:13px;">Belum ada grup yang tersedia untuk kategori ini. Yuk buat duluan!</p>
             </div>`;
             return;
         }
@@ -78,6 +82,8 @@ async function fetchLobbies() {
     } catch (err) {
         console.error('Fetch Lobbies Error:', err);
         container.innerHTML = `<div style="padding:40px; text-align:center; color:#dc2626; font-size:14px;">Error connecting to server. Please refresh.</div>`;
+    } finally {
+        isFetching = false;
     }
 }
 
