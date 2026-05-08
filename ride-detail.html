@@ -53,10 +53,10 @@
         <div class="hero-bg-orb hero-bg-orb--1" style="background:var(--purple-300);"></div>
         <div class="detail-hero__content">
           <div class="lobby-card__badge lobby-card__badge--ride" style="margin-bottom:8px;">🚗 Ride Sharing</div>
-          <h1 class="detail-hero__title">Grab to Sudirman</h1>
+          <h1 class="detail-hero__title" id="ride-title">Loading...</h1>
           <div class="detail-hero__chip">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            Departs in <strong id="ride-countdown">15:00</strong>
+            Departs in <strong id="ride-countdown">--:--</strong>
           </div>
         </div>
       </section>
@@ -70,27 +70,27 @@
               <div class="timeline-dot dot-start"></div>
               <div class="timeline-content">
                 <span>Pickup Point</span>
-                <strong>Senayan City, Main Lobby</strong>
-                <span class="route-note">Near Starbucks entrance</span>
+                <strong id="ride-pickup-display">Loading...</strong>
+                <span class="route-note" id="ride-pickup-note"></span>
               </div>
             </div>
             <div class="timeline-item">
               <div class="timeline-dot dot-end"></div>
               <div class="timeline-content">
                 <span>Drop-off</span>
-                <strong>SCBD — Equity Tower</strong>
-                <span class="route-note">Lobby drop-off area</span>
+                <strong id="ride-dropoff-display">Loading...</strong>
+                <span class="route-note" id="ride-dropoff-note"></span>
               </div>
             </div>
           </div>
-          <div class="route-meta">
+          <div class="route-meta" id="ride-meta-row" style="display:none;">
             <div class="route-meta__item">
               <span>🚘</span>
-              <div><strong>Toyota Innova Zenix</strong><span>B 1234 XYZ</span></div>
+              <div><strong id="ride-vehicle">—</strong><span id="ride-plate">—</span></div>
             </div>
             <div class="route-meta__item">
               <span>⏱️</span>
-              <div><strong>~25 min</strong><span>Est. travel time</span></div>
+              <div><strong id="ride-est-time">—</strong><span>Est. travel time</span></div>
             </div>
           </div>
         </div>
@@ -102,32 +102,13 @@
         <div class="members-card">
           <div class="capacity-info">
             <span class="capacity-label">Ride Capacity</span>
-            <span class="capacity-value" id="ride-capacity">3 / 5 Joined</span>
+            <span class="capacity-value" id="ride-capacity">— / — Joined</span>
           </div>
           <div class="progress-track" style="height:10px; margin-top:8px;">
-            <div class="progress-fill" id="ride-progress" style="--progress:60%;" data-progress="60"></div>
+            <div class="progress-fill" id="ride-progress" style="--progress:0%;" data-progress="0"></div>
           </div>
           <div class="member-list">
-            <div class="member-row">
-              <div class="avatar-sm"><img src="https://ui-avatars.com/api/?name=Yu&background=7c3aed&color=fff" alt="Yu"/></div>
-              <div class="member-info"><strong>Yudi K.</strong><span>Host · Joined 2 min ago</span></div>
-            </div>
-            <div class="member-row">
-              <div class="avatar-sm"><img src="https://ui-avatars.com/api/?name=Ri&background=6366f1&color=fff" alt="Ri"/></div>
-              <div class="member-info"><strong>Rina S.</strong><span>Joined 5 min ago</span></div>
-            </div>
-            <div class="member-row">
-              <div class="avatar-sm"><img src="https://ui-avatars.com/api/?name=An&background=8b5cf6&color=fff" alt="An"/></div>
-              <div class="member-info"><strong>Andi P.</strong><span>Joined 8 min ago</span></div>
-            </div>
-            <div class="member-row member-row--empty">
-              <div class="avatar-sm empty">?</div>
-              <div class="member-info"><strong>Waiting for passenger...</strong></div>
-            </div>
-            <div class="member-row member-row--empty">
-              <div class="avatar-sm empty">?</div>
-              <div class="member-info"><strong>Waiting for passenger...</strong></div>
-            </div>
+            <!-- Members loaded dynamically from API -->
           </div>
         </div>
       </section>
@@ -138,20 +119,20 @@
         <div class="payment-summary">
           <div class="summary-row">
             <span>Estimated Fare (Total)</span>
-            <span>Rp 75.000</span>
+            <span id="cost-total-fare">—</span>
           </div>
           <div class="summary-row" style="color:var(--purple-700); font-weight:600;">
-            <span>Your Split (1/5)</span>
-            <span>Rp 15.000</span>
+            <span id="cost-split-label">Your Split</span>
+            <span id="cost-split">—</span>
           </div>
           <div class="summary-divider"></div>
           <div class="summary-row">
             <span>Platform Admin Fee</span>
-            <span>Rp 2.000</span>
+            <span id="cost-fee">—</span>
           </div>
           <div class="summary-row summary-total">
             <span>Total to Pay</span>
-            <span>Rp 17.000</span>
+            <span id="cost-pay">—</span>
           </div>
         </div>
         <div class="info-alert" style="margin-top:12px; background:#fef3c7; border-color:#fde68a; color:#92400e;">
@@ -195,7 +176,7 @@
     <div class="floating-cta-bar">
       <div class="cta-price">
         <span>You'll pay</span>
-        <strong>Rp 17.000</strong>
+        <strong class="cta-price" id="cta-total">—</strong>
       </div>
       <button class="btn-join-detail btn-join-detail--ride" id="btn-ride-join" onclick="joinRide()">
         Join & Pay Admin Fee
@@ -259,13 +240,23 @@
             const lobby = json.data;
             
             // 1. Update Title & Meta
-            document.querySelector('.detail-hero__title').textContent = lobby.title;
-            const routeNotes = document.querySelectorAll('.route-timeline .timeline-content strong');
+            document.getElementById('ride-title').textContent = lobby.title;
             if(lobby.metadata) {
-                if(lobby.metadata.pickupLocation && routeNotes[0]) routeNotes[0].textContent = lobby.metadata.pickupLocation;
-                if(lobby.metadata.dropoffLocation && routeNotes[1]) routeNotes[1].textContent = lobby.metadata.dropoffLocation;
+                if(lobby.metadata.pickupLocation) {
+                    document.getElementById('ride-pickup-display').textContent = lobby.metadata.pickupLocation;
+                }
+                if(lobby.metadata.dropoffLocation) {
+                    document.getElementById('ride-dropoff-display').textContent = lobby.metadata.dropoffLocation;
+                }
                 if(lobby.metadata.departureTime) {
                     document.getElementById('ride-countdown').textContent = lobby.metadata.departureTime;
+                }
+                // Show vehicle info if available
+                if (lobby.metadata.vehicleName || lobby.metadata.vehiclePlate) {
+                    document.getElementById('ride-meta-row').style.display = '';
+                    if (lobby.metadata.vehicleName) document.getElementById('ride-vehicle').textContent = lobby.metadata.vehicleName;
+                    if (lobby.metadata.vehiclePlate) document.getElementById('ride-plate').textContent = lobby.metadata.vehiclePlate;
+                    if (lobby.metadata.estTime) document.getElementById('ride-est-time').textContent = lobby.metadata.estTime;
                 }
             }
 
@@ -288,26 +279,23 @@
             const displayFee = isAdminFree ? 0 : lobby.memberFee;
             const displayTotal = displayPrice + displayFee;
 
-            const elements = document.querySelectorAll('.payment-summary .summary-row span:nth-child(2)');
-            const splitLabel = document.querySelectorAll('.payment-summary .summary-row span:first-child');
-            if(elements.length >= 4) {
-               elements[0].textContent = formatRp(lobby.totalPrice);
-               if(splitLabel[1]) splitLabel[1].textContent = `Your Split (1/${displaySlots})`;
-               elements[1].textContent = formatRp(displayPrice);
-               
-               if (isAdminFree) {
-                 elements[2].textContent = 'Gratis';
-                 elements[2].style.color = '#16a34a'; // green
-                 elements[2].style.fontWeight = 'bold';
-               } else {
-                 elements[2].textContent = formatRp(lobby.memberFee);
-                 elements[2].style.color = '';
-                 elements[2].style.fontWeight = '';
-               }
-               
-               elements[3].textContent = formatRp(displayTotal);
-               document.querySelector('.cta-price strong').textContent = formatRp(displayTotal);
+            document.getElementById('cost-total-fare').textContent = formatRp(lobby.totalPrice);
+            document.getElementById('cost-split-label').textContent = `Your Split (1/${displaySlots})`;
+            document.getElementById('cost-split').textContent = formatRp(displayPrice);
+            
+            const costFeeEl = document.getElementById('cost-fee');
+            if (isAdminFree) {
+              costFeeEl.textContent = 'Gratis';
+              costFeeEl.style.color = '#16a34a';
+              costFeeEl.style.fontWeight = 'bold';
+            } else {
+              costFeeEl.textContent = formatRp(lobby.memberFee);
+              costFeeEl.style.color = '';
+              costFeeEl.style.fontWeight = '';
             }
+            
+            document.getElementById('cost-pay').textContent = formatRp(displayTotal);
+            document.getElementById('cta-total').textContent = formatRp(displayTotal);
 
             // 4. Render Members
             const memberList = document.querySelector('.member-list');
