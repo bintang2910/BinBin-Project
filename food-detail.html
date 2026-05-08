@@ -404,6 +404,10 @@
       } catch (e) {
         console.error(e);
         showToast('Gagal memuat detail lobby: ' + e.message, 'error');
+        document.getElementById('food-title').textContent = 'Grup Tidak Ditemukan';
+        document.getElementById('food-capacity').textContent = '—';
+        currentLobbyId = null;
+        setTimeout(() => window.location.href = 'index.html', 3000);
       }
     }
 

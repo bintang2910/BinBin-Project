@@ -370,6 +370,9 @@
       } catch (err) {
         console.error(err);
         showToast(err.message, 'error');
+        document.getElementById('event-title').textContent = 'Grup Tidak Ditemukan';
+        currentLobbyId = null;
+        setTimeout(() => window.location.href = 'index.html', 3000);
       }
     }
 
