@@ -832,6 +832,100 @@ export async function getPlatformFees() {
 }
 
 /* ═══════════════════════════════════════════════════
+   Lobby Cancellations & Refunds
+   ═══════════════════════════════════════════════════ */
+
+// ─── Leave Lobby ───
+export async function leaveLobby(lobbyId: string, userId: string) {
+  return await db.transaction(async (tx) => {
+    const [lobby] = await tx.select().from(lobbies).where(eq(lobbies.id, lobbyId)).limit(1);
+    if (!lobby) throw new ServiceError("Lobby not found.", 404);
+
+    if (lobby.status !== "open") {
+      throw new ServiceError("Tidak bisa keluar dari grup yang sudah terkunci atau berjalan.", 400);
+    }
+
+    const [member] = await tx.select().from(lobbyMembers).where(
+      and(eq(lobbyMembers.lobbyId, lobbyId), eq(lobbyMembers.userId, userId))
+    ).limit(1);
+
+    if (!member) throw new ServiceError("Anda bukan anggota grup ini.", 400);
+    if (member.role === "host") throw new ServiceError("Host tidak bisa keluar dari grup. Gunakan fitur Batalkan Grup.", 400);
+
+    if (member.paymentStatus === "escrow" || member.paymentStatus === "paid") {
+      const refundAmount = member.amountPaid || (lobby.pricePerPerson + lobby.memberFee);
+      if (refundAmount > 0) {
+        await tx.update(user).set({ balance: sql`${user.balance} + ${refundAmount}` }).where(eq(user.id, userId));
+        await tx.insert(walletTransactions).values({
+          userId: userId,
+          amount: refundAmount,
+          type: "refund",
+          description: `Pengembalian dana (Keluar Grup) untuk ${lobby.title}`,
+        });
+      }
+    }
+
+    await tx.delete(lobbyMembers).where(eq(lobbyMembers.id, member.id));
+    await tx.update(lobbies).set({
+      currentSlots: sql`${lobbies.currentSlots} - 1`,
+      updatedAt: new Date(),
+    }).where(eq(lobbies.id, lobbyId));
+
+    // Re-calculate dynamic pricing
+    const updatedLobby = await tx.select().from(lobbies).where(eq(lobbies.id, lobbyId)).limit(1);
+    if (updatedLobby[0] && updatedLobby[0].currentSlots > 0) {
+      const newPricePerPerson = Math.ceil(updatedLobby[0].totalPrice / updatedLobby[0].currentSlots);
+      await tx.update(lobbies).set({ pricePerPerson: newPricePerPerson }).where(eq(lobbies.id, lobbyId));
+    }
+
+    return { message: "Berhasil keluar dari grup." };
+  });
+}
+
+// ─── Cancel Lobby (Host Only) ───
+export async function cancelLobby(lobbyId: string, hostId: string) {
+  return await db.transaction(async (tx) => {
+    const [lobby] = await tx.select().from(lobbies).where(eq(lobbies.id, lobbyId)).limit(1);
+    if (!lobby) throw new ServiceError("Lobby not found.", 404);
+    if (lobby.hostId !== hostId) throw new ServiceError("Hanya Host yang bisa membatalkan grup ini.", 403);
+
+    if (lobby.status !== "open") {
+      throw new ServiceError("Tidak bisa membatalkan grup yang sudah terkunci atau berjalan.", 400);
+    }
+
+    const membersToRefund = await tx.select().from(lobbyMembers).where(
+      and(eq(lobbyMembers.lobbyId, lobbyId), ne(lobbyMembers.userId, hostId))
+    );
+
+    for (const m of membersToRefund) {
+      if (m.paymentStatus === "escrow" || m.paymentStatus === "paid") {
+        const refundAmount = m.amountPaid || (lobby.pricePerPerson + lobby.memberFee);
+        if (refundAmount > 0) {
+          await tx.update(user).set({ balance: sql`${user.balance} + ${refundAmount}` }).where(eq(user.id, m.userId));
+          await tx.insert(walletTransactions).values({
+            userId: m.userId,
+            amount: refundAmount,
+            type: "refund",
+            description: `Pengembalian dana (Grup Dibatalkan Host) untuk ${lobby.title}`,
+          });
+        }
+      }
+    }
+
+    await tx.update(lobbies).set({
+      status: "cancelled",
+      updatedAt: new Date(),
+    }).where(eq(lobbies.id, lobbyId));
+
+    await tx.delete(lobbyMembers).where(
+      and(eq(lobbyMembers.lobbyId, lobbyId), ne(lobbyMembers.userId, hostId))
+    );
+
+    return { message: "Grup berhasil dibatalkan dan dana dikembalikan." };
+  });
+}
+
+/* ═══════════════════════════════════════════════════
    Custom Error
    ═══════════════════════════════════════════════════ */
 

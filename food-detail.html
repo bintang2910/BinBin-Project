@@ -327,6 +327,26 @@
             btn.disabled = btnDisabled;
             if (btnOnClick) btn.onclick = btnOnClick;
 
+            // Inject Leave/Cancel button
+            const oldCancelBtn = document.getElementById('btn-cancel-lobby');
+            if (oldCancelBtn) oldCancelBtn.remove();
+            if (lobby.status === 'open') {
+              const cancelBtn = document.createElement('button');
+              cancelBtn.id = 'btn-cancel-lobby';
+              cancelBtn.className = 'btn-primary';
+              cancelBtn.style.backgroundColor = '#ef4444';
+              cancelBtn.style.marginTop = '10px';
+              
+              if (isMember.role === 'host') {
+                cancelBtn.textContent = '🛑 Batalkan Grup';
+                cancelBtn.onclick = cancelLobby;
+              } else {
+                cancelBtn.textContent = '🚪 Keluar Grup';
+                cancelBtn.onclick = leaveLobby;
+              }
+              btn.parentNode.insertBefore(cancelBtn, btn.nextSibling);
+            }
+
             if (isMember.role !== 'host' && !isMember.isArrived && (lobby.status === 'full' || lobby.status === 'open')) {
               if (lobby.autoCompleteAt) {
                 // Clear old timer if exists
@@ -485,6 +505,27 @@
         btn.textContent = '🔒 Stop Pencarian (Mulai Sekarang)';
       }
     }
+
+    async function leaveLobby() {
+      if(!confirm('Anda yakin ingin keluar dari grup? Dana patungan akan dikembalikan otomatis.')) return;
+      try {
+        const res = await fetch(`${API}/api/lobbies/${currentLobbyId}/leave`, { method: 'POST', credentials: 'include' });
+        if(!res.ok) throw new Error((await res.json()).error || 'Gagal keluar grup');
+        showToast('Berhasil keluar grup. Saldo telah dikembalikan.', 'success');
+        setTimeout(() => window.location.href = 'index.html', 1000);
+      } catch(err) { showToast(err.message, 'error'); }
+    }
+
+    async function cancelLobby() {
+      if(!confirm('Anda yakin ingin membatalkan grup ini? Semua uang member akan dikembalikan otomatis.')) return;
+      try {
+        const res = await fetch(`${API}/api/lobbies/${currentLobbyId}/cancel`, { method: 'POST', credentials: 'include' });
+        if(!res.ok) throw new Error((await res.json()).error || 'Gagal membatalkan grup');
+        showToast('Grup berhasil dibatalkan.', 'success');
+        setTimeout(() => window.location.href = 'index.html', 1000);
+      } catch(err) { showToast(err.message, 'error'); }
+    }
+
 
     async function hostArrive() {
       if (!confirm('Tandai pesanan tiba? Ini akan memulai timer 10 menit sebelum pesanan selesai otomatis.')) return;

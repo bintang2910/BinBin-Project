@@ -15,6 +15,8 @@ import {
   hostArrived,
   ServiceError,
   payLobbyFee,
+  leaveLobby,
+  cancelLobby,
 } from "../services/lobby.service.js";
 
 const router = Router();
@@ -231,6 +233,30 @@ router.get("/:id/chat", requireAuth, async (req, res) => {
     const user = getAuthUser(req);
     const messages = await getLobbyChat(lobbyId, user.id);
     res.json({ data: messages });
+  } catch (error) {
+    handleError(res, error);
+  }
+});
+
+// ─── POST /api/lobbies/:id/leave — Member leaves lobby ───
+router.post("/:id/leave", requireAuth, async (req, res) => {
+  try {
+    const lobbyId = uuidParam.parse(req.params.id);
+    const user = getAuthUser(req);
+    const result = await leaveLobby(lobbyId, user.id);
+    res.json({ data: result });
+  } catch (error) {
+    handleError(res, error);
+  }
+});
+
+// ─── POST /api/lobbies/:id/cancel — Host cancels lobby ───
+router.post("/:id/cancel", requireAuth, async (req, res) => {
+  try {
+    const lobbyId = uuidParam.parse(req.params.id);
+    const user = getAuthUser(req);
+    const result = await cancelLobby(lobbyId, user.id);
+    res.json({ data: result });
   } catch (error) {
     handleError(res, error);
   }
