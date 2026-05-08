@@ -103,12 +103,10 @@ function showToast(msg, type = 'info') {
 
 async function checkAuth() {
   try {
-    // Tanya ke backend, apakah browser ini punya sesi (tiket) login yang sah?
     const res = await fetch(`${API}/api/auth/get-session`, {
       credentials: 'include'
     });
 
-    // Kalau responnya error (misal 401 Unauthorized) atau datanya kosong
     if (!res.ok) {
       window.location.href = 'login.html';
       return;
@@ -116,17 +114,17 @@ async function checkAuth() {
 
     const data = await res.json();
 
-    // Kalau data sesinya tidak ada, tendang kembali ke login
-    if (!data.session) {
+    // Null-safe check: API bisa mengembalikan null jika belum login
+    if (!data || !data.session) {
       window.location.href = 'login.html';
+      return;
     }
 
-    // Kalau sampai di baris ini, berarti aman & sudah login!
-    console.log("Welcome,", data.user.name);
+    // Aman & sudah login!
+    console.log("Welcome,", data.user?.name);
     checkUnreadNotifications();
 
   } catch (err) {
-    // Kalau server mati atau error jaringan, lempar ke login juga
     console.error('Auth error:', err);
     window.location.href = 'login.html';
   }
